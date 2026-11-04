@@ -15,8 +15,17 @@ Las categorías y los atributos que se comparan en cada una están en `CATEGORIA
 
 ## Estado actual (4-nov-2026)
 
-- `index.html`: página de prueba con datos **inventados** (refacciones y proveedores ficticios) para ver el funcionamiento.
-- La captura de catálogos se hace en local: `build_catalogo.py` genera `datos/productos.json` y `Catalogo comparativo.xlsx`. El avance (qué catálogos faltan) está en `AVANCE.md`, también local.
+`index.html` es la app (antes fue el piloto de refacciones; se conservó su diseño). Un solo archivo, sin librerías.
+
+- **Datos:** al abrir intenta leer `datos/productos.json`. Si existe (en la computadora, servido con `python -m http.server`), usa esos datos reales y la etiqueta dice "Datos reales · solo en esta computadora". Si no (la página publicada, porque `datos/` no se sube), usa `EJEMPLO`, con productos y proveedores **inventados** ("Fábrica Ejemplo A"…).
+- **Formato del JSON:** `{categorias: {LINEA: {Familia: {Categoría: [campos a comparar]}}}, etiquetas: {campo: "Nombre"}, productos: [...]}`. Cada producto: `id, linea, familia, categoria, proveedor, modelo, nombre, precio, moneda, incoterm, fecha, atributos{}`, y opcionales `medidas_mm, empaque, piezas_40hq, notas, archivo`.
+- **Navegación:** línea (SUNL / ALZATOR) → tipo (botones agrupados por familia, solo los que tienen productos) → filtros por característica (selects, solo los de `FILTRABLES` con 2 o más valores, más Proveedor). La lista va de menor a mayor precio; el buscador busca en nombre, modelo, proveedor y características.
+- **Ficha:** precio, incoterm, piezas por 40HQ, todas las características (las que faltan dicen "No indicado"), notas de captura y archivo fuente.
+- **Comparar:** casilla en cada producto (también se pueden mezclar tipos); la barra de abajo abre la tabla a todo lo ancho. Mejor precio en verde (solo si todos están en la misma moneda); lo que es igual en todos sale en gris.
+- **Celular** (≤820 px): lista o ficha, una a la vez, con botón para regresar.
+- **Probar:** `.claude/launch.json` levanta `python -m http.server 8766`.
+
+La captura de catálogos se hace en local: `build_catalogo.py` genera `datos/productos.json` y `Catalogo comparativo.xlsx`. El avance (qué catálogos faltan) está en `AVANCE.md`, también local.
 
 ## Regla estricta: nada con precios en el repo
 

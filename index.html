@@ -1,15 +1,19 @@
+<!doctype html>
+<html lang="es">
+<head>
 <meta charset="utf-8">
-<title>Catálogo de Proveedores</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catálogo de proveedores</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: lista a la izquierda y ficha a la derecha; en celular, una a la vez. */
+/* Lista a la izquierda y ficha (o comparación) a la derecha; en celular, una a la vez. */
 :root{
   --bg:#f4f6f7; --surface:#ffffff; --surface-2:#edf0f2; --line:#dfe3e7;
   --fg:#14181b; --muted:#5c646d; --faint:#8a929b;
   --accent:#0b6c76; --accent-soft:#e2f0f1;
   --ok:#1c7445; --ok-soft:#e3f2e8;
+  --warn:#8a5a00; --warn-soft:#fbf0d9;
   --font:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Consolas, monospace;
   --r:10px;
@@ -20,6 +24,7 @@
     --fg:#e7eaed; --muted:#a0a8b0; --faint:#717982;
     --accent:#52b6c0; --accent-soft:#14302f;
     --ok:#5dc38a; --ok-soft:#15291d;
+    --warn:#e0b35a; --warn-soft:#2e2414;
     color-scheme:dark;
   }
 }
@@ -28,20 +33,22 @@
   --fg:#e7eaed; --muted:#a0a8b0; --faint:#717982;
   --accent:#52b6c0; --accent-soft:#14302f;
   --ok:#5dc38a; --ok-soft:#15291d;
+  --warn:#e0b35a; --warn-soft:#2e2414;
   color-scheme:dark;
 }
 
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.5;
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.5;
   -webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+select{font:inherit;font-size:16px}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 
-.app{max-width:1080px;margin:0 auto;padding-block:28px 56px;
+.app{max-width:1180px;margin:0 auto;padding-block:28px 96px;
   padding-left:max(16px, env(safe-area-inset-left, 0px));
   padding-right:max(16px, env(safe-area-inset-right, 0px));
-  display:flex;flex-direction:column;gap:20px}
+  display:flex;flex-direction:column;gap:18px}
 
 /* Encabezado */
 .top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px 24px}
@@ -49,6 +56,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 h1{margin:0;font-size:1.6rem;font-weight:600;letter-spacing:-.015em;line-height:1.2;text-wrap:balance}
 .tag{align-self:flex-start;font-size:.72rem;font-weight:500;letter-spacing:.04em;text-transform:uppercase;
   color:var(--muted);background:var(--surface-2);border-radius:999px;padding:3px 10px}
+.tag.local{color:var(--warn);background:var(--warn-soft)}
 .search{position:relative;flex:1 1 260px;max-width:360px}
 .search input{width:100%;font:inherit;font-size:16px;color:var(--fg);background:var(--surface);
   border:1px solid var(--line);border-radius:var(--r);padding:10px 12px 10px 36px;outline:none;
@@ -57,46 +65,57 @@ h1{margin:0;font-size:1.6rem;font-weight:600;letter-spacing:-.015em;line-height:
 .search input:focus{border-color:var(--accent)}
 .search svg{position:absolute;left:12px;top:50%;width:16px;height:16px;margin-top:-8px;color:var(--faint);pointer-events:none}
 
-/* Selector Partes / Proveedores */
+/* Línea (SUNL / ALZATOR) */
 .seg{display:inline-flex;align-self:flex-start;background:var(--surface-2);border-radius:var(--r);padding:3px;gap:2px}
-.seg button{padding:7px 14px;border-radius:8px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:8px;
+.seg button{padding:7px 16px;border-radius:8px;font-weight:600;letter-spacing:.02em;color:var(--muted);display:flex;align-items:center;gap:8px;
   transition:background-color .15s ease,color .15s ease}
 .seg button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.seg .n{font-family:var(--mono);font-size:.78rem;color:var(--faint);font-variant-numeric:tabular-nums}
+.n{font-family:var(--mono);font-size:.78rem;font-weight:400;color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* Tipos de producto (agrupados por familia) */
+.cats{display:flex;flex-wrap:wrap;gap:6px 20px;align-items:flex-start}
+.fam{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fam small{font-size:.72rem;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
+.fam-row{display:flex;flex-wrap:wrap;gap:6px}
+.cat{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);
+  background:var(--surface);font-weight:500;font-size:.9rem;transition:background-color .12s ease,border-color .12s ease,color .12s ease}
+.cat:hover{border-color:var(--accent)}
+.cat[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.cat[aria-pressed="true"] .n{color:var(--surface);opacity:.75}
+
+/* Filtros por característica */
+.filters{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-end}
+.filters:empty{display:none}
+.f{display:flex;flex-direction:column;gap:3px;min-width:0}
+.f span{font-size:.72rem;color:var(--muted);letter-spacing:.02em}
+.f select{color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 28px 6px 10px;
+  max-width:220px;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a929b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;background-size:14px}
+.f select.on{border-color:var(--accent);color:var(--accent)}
+.clear{font-size:.84rem;font-weight:500;color:var(--accent);padding:7px 4px}
 
 /* Dos paneles */
-.main{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:24px;align-items:start}
+.main{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:24px;align-items:start}
 .list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin:0;padding:0;list-style:none}
+.list li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}
 .list li+li{border-top:1px solid var(--line)}
-.item{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 12px;padding:12px 16px;
+.item{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:12px 4px 12px 16px;
   transition:background-color .12s ease}
-.item:hover{background:var(--surface-2)}
-.item[aria-current="true"]{background:var(--accent-soft)}
-.item[aria-current="true"] .item-name{color:var(--accent)}
-.item-name{grid-column:2;grid-row:1;align-self:end;font-weight:500;min-width:0}
-.item-sub{grid-column:2;grid-row:2;align-self:start;font-size:.84rem;color:var(--muted);min-width:0}
-.item-side{grid-column:3;grid-row:1 / span 2;align-self:center;text-align:right;font-size:.82rem;color:var(--muted);
-  font-variant-numeric:tabular-nums;white-space:nowrap}
-.item-side b{display:block;font-weight:500;color:var(--fg);font-family:var(--mono);font-size:.86rem}
-.code{font-family:var(--mono);font-size:.82em;letter-spacing:.01em}
-
-/* Imagen de parte (ilustracion en trazo) y logotipo de proveedor */
-.pic{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:9px;background:var(--surface-2)}
-.pic svg{width:30px;height:30px;display:block}
-.pic .s{fill:none;stroke:var(--muted);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-.pic .f{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2.4;stroke-linejoin:round}
-.pic .d{fill:var(--muted)}
-.logo{flex:none;display:block;width:40px;height:40px}
-.logo svg{width:100%;height:100%;display:block}
-.pic.lg{width:84px;height:84px;border-radius:16px}
-.pic.lg svg{width:60px;height:60px}
-.logo.lg{width:72px;height:72px}
-.pic.sm,.logo.sm{width:34px;height:34px}
-.pic.sm svg{width:25px;height:25px}
-.item>.pic,.item>.logo{grid-column:1;grid-row:1 / span 2;align-self:center}
-.d-top{display:flex;align-items:center;gap:18px}
-.d-top .d-head{min-width:0}
-.empty-list{padding:28px 16px;color:var(--muted);font-size:.9rem;text-align:center}
+.list li:hover{background:var(--surface-2)}
+.list li.cur{background:var(--accent-soft)}
+.list li.cur .item-name{color:var(--accent)}
+.item-name{grid-column:1;font-weight:500;min-width:0}
+.item-sub{grid-column:1;font-size:.84rem;color:var(--muted);min-width:0}
+.item-side{grid-column:2;grid-row:1 / span 2;align-self:center;text-align:right;font-size:.8rem;color:var(--muted);white-space:nowrap}
+.item-side b{display:block;font-weight:500;color:var(--fg);font-family:var(--mono);font-size:.88rem;font-variant-numeric:tabular-nums}
+.pick{width:44px;height:44px;display:grid;place-items:center;margin-right:6px;border-radius:8px}
+.pick i{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--faint);display:grid;place-items:center;
+  transition:background-color .12s ease,border-color .12s ease}
+.pick[aria-pressed="true"] i{background:var(--accent);border-color:var(--accent)}
+.pick[aria-pressed="true"] i::after{content:"";width:9px;height:5px;border:2px solid var(--surface);border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
+.empty-list{padding:28px 16px;color:var(--muted);font-size:.9rem;text-align:center;display:block!important}
+.code{font-family:var(--mono);font-size:.84em;letter-spacing:.01em}
 
 /* Ficha */
 .detail{min-width:0}
@@ -108,73 +127,85 @@ h1{margin:0;font-size:1.6rem;font-weight:600;letter-spacing:-.015em;line-height:
 .d-head{display:flex;flex-direction:column;gap:6px}
 h2{margin:0;font-size:1.45rem;font-weight:600;letter-spacing:-.012em;line-height:1.25;text-wrap:balance}
 .facts{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.88rem;color:var(--muted)}
-.facts span b{font-weight:500;color:var(--fg)}
-h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
-  display:flex;align-items:baseline;gap:8px}
-h3 .n{font-family:var(--mono);font-weight:400;color:var(--faint)}
+.facts b{font-weight:500;color:var(--fg)}
+.price{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.price b{font-family:var(--mono);font-size:1.5rem;font-weight:500;font-variant-numeric:tabular-nums}
+.price span{color:var(--muted);font-size:.9rem}
+h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .block{display:flex;flex-direction:column;gap:10px}
-
-/* Renglones de oferta (parte <-> proveedor) */
-.rows{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.row{width:100%;display:grid;grid-template-columns:minmax(0,1.7fr) repeat(3,minmax(0,1fr)) 16px;gap:8px 16px;
-  align-items:center;padding:14px 16px;transition:background-color .12s ease}
-.row+.row{border-top:1px solid var(--line)}
-.row:hover{background:var(--surface-2)}
-.row:hover .chev{color:var(--accent);transform:translateX(2px)}
-.who{min-width:0;display:flex;align-items:flex-start;gap:12px}
-.who-txt{min-width:0;display:flex;flex-direction:column;gap:4px}
-.who-name{font-weight:500}
-.who-sub{font-size:.84rem;color:var(--muted)}
-.chips{display:flex;flex-wrap:wrap;gap:4px}
-.chip{font-size:.72rem;font-weight:500;border-radius:999px;padding:1px 8px;white-space:nowrap}
-.chip.ok{background:var(--ok-soft);color:var(--ok)}
-.chip.fast{background:var(--accent-soft);color:var(--accent)}
-.kv{display:flex;flex-direction:column;gap:1px;min-width:0}
-.kv small{font-size:.72rem;color:var(--faint);letter-spacing:.02em}
-.kv span{font-family:var(--mono);font-size:.92rem;font-variant-numeric:tabular-nums;white-space:nowrap}
-.chev{color:var(--faint);width:16px;height:16px;transition:transform .15s ease,color .15s ease}
-
-/* Contacto del proveedor */
-.contact{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);
+.specs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);
   border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.c{background:var(--surface);padding:12px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
-.c small{font-size:.72rem;color:var(--faint);letter-spacing:.02em}
-.c-val{display:flex;align-items:center;gap:8px;min-width:0}
-.c-val span{overflow-wrap:anywhere;user-select:all}
-.copy{flex:none;font-size:.74rem;font-weight:500;color:var(--accent);padding:2px 6px;border-radius:6px}
-.copy:hover{background:var(--accent-soft)}
+.spec{background:var(--surface);padding:10px 16px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.spec small{font-size:.72rem;color:var(--faint);letter-spacing:.02em}
+.spec span{overflow-wrap:anywhere}
+.spec .nd{color:var(--faint)}
+.note{font-size:.88rem;color:var(--warn);background:var(--warn-soft);border-radius:8px;padding:10px 14px}
+.btn{align-self:flex-start;font-weight:500;color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:7px 14px;
+  transition:background-color .12s ease}
+.btn:hover{background:var(--accent-soft)}
+.btn.on{background:var(--accent);color:var(--surface)}
+.src{font-size:.8rem;color:var(--faint);overflow-wrap:anywhere}
+.hint{color:var(--muted);padding:28px 0}
 
-@media (max-width:760px){
+/* Comparación */
+.cmp-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.cmp{border-collapse:collapse;width:100%;font-size:.9rem}
+.cmp th,.cmp td{padding:9px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);min-width:150px}
+.cmp tr:last-child th,.cmp tr:last-child td{border-bottom:0}
+.cmp thead th{font-weight:600;background:var(--surface-2);position:relative}
+.cmp tbody th{font-weight:400;color:var(--muted);font-size:.8rem;min-width:130px;position:sticky;left:0;background:var(--surface)}
+.cmp thead th:first-child{position:sticky;left:0;z-index:1}
+.cmp td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.cmp td.best{color:var(--ok);font-weight:500}
+.cmp tr:not(.diff) td{color:var(--muted)}
+.cmp tr.diff th{color:var(--fg);font-weight:500}
+.main[data-vista="comparar"]{grid-template-columns:minmax(0,1fr)}
+.main[data-vista="comparar"] .list-wrap{display:none}
+.main[data-vista="comparar"] .back{display:inline-flex}
+.cmp .x{display:block;font-size:.76rem;font-weight:500;color:var(--accent);margin-top:4px}
+.cmp .sub{display:block;font-weight:400;font-size:.8rem;color:var(--muted)}
+
+/* Barra de comparar */
+.bar{position:fixed;left:50%;bottom:max(16px, env(safe-area-inset-bottom, 0px));transform:translateX(-50%);
+  display:flex;align-items:center;gap:6px 14px;background:var(--fg);color:var(--bg);border-radius:999px;
+  padding:8px 8px 8px 18px;box-shadow:0 6px 24px rgba(0,0,0,.18);max-width:calc(100% - 32px);
+  transition:opacity .15s ease,transform .15s ease}
+.bar[hidden]{display:flex;opacity:0;pointer-events:none;transform:translate(-50%,8px)}
+.bar span{font-size:.9rem;white-space:nowrap}
+.bar button{font-weight:500;font-size:.9rem;border-radius:999px;padding:6px 14px;white-space:nowrap}
+.bar .go{background:var(--accent);color:var(--surface)}
+.bar .no{color:var(--bg);opacity:.75}
+
+@media (max-width:820px){
   .main{grid-template-columns:minmax(0,1fr)}
   .main[data-show="list"] .detail{display:none}
   .main[data-show="detail"] .list-wrap{display:none}
   .back{display:inline-flex}
-  .row{grid-template-columns:repeat(3,minmax(0,1fr)) 16px}
-  .row .who{grid-column:1 / 4}
-  .row .chev{grid-column:4;grid-row:1}
-  .contact{grid-template-columns:minmax(0,1fr)}
+  .specs{grid-template-columns:minmax(0,1fr)}
+  .f{flex:1 1 140px}
+  .f select{max-width:none;width:100%}
 }
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
 </style>
-
+</head>
+<body>
 <div class="app">
   <header class="top">
     <div class="brand">
       <h1>Catálogo de proveedores</h1>
-      <span class="tag">Maqueta · datos de ejemplo</span>
+      <span class="tag" id="origen">Datos de ejemplo</span>
     </div>
     <label class="search" for="q">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="Buscar parte, código o proveedor" autocomplete="off" aria-label="Buscar">
+      <input id="q" type="search" placeholder="Buscar modelo, proveedor o característica" autocomplete="off" aria-label="Buscar">
     </label>
   </header>
 
-  <div class="seg" role="tablist" aria-label="Ver por">
-    <button id="tab-prov" role="tab" aria-selected="true" data-view="proveedores">Proveedores <span class="n" id="n-prov"></span></button>
-    <button id="tab-partes" role="tab" aria-selected="false" data-view="partes">Partes <span class="n" id="n-partes"></span></button>
-  </div>
+  <div class="seg" role="tablist" aria-label="Línea" id="lineas"></div>
+  <nav class="cats" id="cats" aria-label="Tipo de producto"></nav>
+  <div class="filters" id="filters"></div>
 
   <div class="main" id="main" data-show="list">
     <div class="list-wrap"><ul class="list" id="list"></ul></div>
@@ -182,233 +213,310 @@ h3 .n{font-family:var(--mono);font-weight:400;color:var(--faint)}
   </div>
 </div>
 
+<div class="bar" id="bar" hidden>
+  <span id="bar-n"></span>
+  <button class="go" id="bar-go">Comparar</button>
+  <button class="no" id="bar-no">Quitar</button>
+</div>
+
 <script>
-var PARTES = [
-  {id:'balatas', nombre:'Balatas delanteras', categoria:'Frenos', codigo:'BF-2041', unidad:'Juego de 4 piezas',
-   compat:'Nissan Versa 2015–2023 · Nissan March 2012–2020'},
-  {id:'amortiguador', nombre:'Amortiguador delantero', categoria:'Suspensión', codigo:'AD-3317', unidad:'Pieza',
-   compat:'Chevrolet Aveo 2012–2018 · Chevrolet Sonic 2013–2016'},
-  {id:'bateria', nombre:'Batería 12 V 45 Ah', categoria:'Eléctrico', codigo:'BT-1245', unidad:'Pieza',
-   compat:'Grupo 35 · compactos y subcompactos'}
-];
-var PROVEEDORES = [
-  {id:'ocampo', nombre:'Autopartes Ocampo', ciudad:'Guadalajara, Jal.', contacto:'Laura Ocampo',
-   tel:'33 3615 2290', correo:'ventas@autopartesocampo.mx', credito:'30 días'},
-  {id:'bajio', nombre:'Frenos del Bajío', ciudad:'León, Gto.', contacto:'Ricardo Méndez',
-   tel:'477 712 4085', correo:'pedidos@frenosdelbajio.mx', credito:'15 días'},
-  {id:'rivera', nombre:'Suspensiones Rivera', ciudad:'Zapopan, Jal.', contacto:'Andrés Rivera',
-   tel:'33 3833 1174', correo:'contacto@suspensionesrivera.mx', credito:'Contado'},
-  {id:'lozano', nombre:'Energía Automotriz Lozano', ciudad:'Monterrey, N.L.', contacto:'Mariana Lozano',
-   tel:'81 8340 5521', correo:'mlozano@energialozano.mx', credito:'30 días'},
-  {id:'galvan', nombre:'Refaccionaria Galván', ciudad:'Tlaquepaque, Jal.', contacto:'Jorge Galván',
-   tel:'33 3657 8802', correo:'jgalvan@refgalvan.mx', credito:'8 días'}
-];
-// Quién vende qué: precio por unidad (MXN), días hábiles de entrega, marca y garantía.
-var OFERTAS = [
-  {parte:'balatas', prov:'ocampo', precio:689, dias:2, marca:'Frenomax', garantia:'6 meses'},
-  {parte:'balatas', prov:'bajio', precio:612, dias:4, marca:'TecFren', garantia:'6 meses'},
-  {parte:'amortiguador', prov:'ocampo', precio:1240, dias:2, marca:'Suspentec', garantia:'12 meses'},
-  {parte:'amortiguador', prov:'rivera', precio:1155, dias:1, marca:'RideLine', garantia:'12 meses'},
-  {parte:'bateria', prov:'lozano', precio:2390, dias:1, marca:'VoltaMax', garantia:'18 meses'},
-  {parte:'bateria', prov:'galvan', precio:2280, dias:3, marca:'Energex', garantia:'12 meses'}
-];
-
-// Ilustraciones de cada parte, en trazo, para que lean igual en tema claro y oscuro.
-var PARTE_SVG = {
-  balatas:'<path d="M9 24c11-9 35-9 46 0v13c0 4-3 7-7 7H16c-4 0-7-3-7-7z" class="s"/><path d="M15 27c9-5 25-5 34 0v8c0 3-2 5-5 5H20c-3 0-5-2-5-5z" class="f"/><circle cx="14" cy="30" r="1.8" class="d"/><circle cx="50" cy="30" r="1.8" class="d"/>',
-  amortiguador:'<circle cx="32" cy="9" r="4" class="s"/><path d="M32 13v14" class="s"/><path d="M24 14l16 3-16 3 16 3-16 3" class="s"/><rect x="26" y="28" width="12" height="23" rx="3" class="f"/><circle cx="32" cy="55" r="4" class="s"/>',
-  bateria:'<rect x="15" y="15" width="8" height="6" rx="1.5" class="s"/><rect x="41" y="15" width="8" height="6" rx="1.5" class="s"/><rect x="9" y="21" width="46" height="30" rx="4" class="f"/><path d="M18 36h7M21.5 32.5v7M39 36h7" class="s"/>'
+// Datos de EJEMPLO (inventados) para la página publicada. Los reales viven en datos/productos.json,
+// que no se sube al repo porque trae precios; si existe (en la computadora), se usa ese.
+var EJEMPLO = {
+  categorias: {
+    SUNL: {
+      'Motocarros y mototaxis': {
+        'Motocarro': ['combustible','cilindrada_cc','cabina','tipo_caja','rodado','ejes','carga_kg','caja_mm','potencia_kw','vel_max_kmh','llantas','peso_kg'],
+        'Mototaxi': ['combustible','cilindrada_cc','cabina','pasajeros','potencia_kw','vel_max_kmh','llantas','peso_kg']
+      },
+      'Recreativos': {
+        'ATV / Cuatrimoto': ['combustible','cilindrada_cc','transmision','tamano'],
+        'UTV / Raizer': ['combustible','cilindrada_cc','plazas','traccion']
+      }
+    },
+    ALZATOR: {
+      'Industrial y logística': {
+        'Montacargas': ['combustible','carga_kg','altura_elev_mm','motor','llantas']
+      },
+      'Construcción': {
+        'Miniexcavadora': ['peso_operativo_t','combustible','motor','potencia_kw','emisiones','cabina','hidraulica'],
+        'Excavadora': ['peso_operativo_t','combustible','motor','potencia_kw','emisiones','cabina','hidraulica']
+      }
+    }
+  },
+  etiquetas: {},
+  productos: [
+    {id:'ej-1', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Motocarro', proveedor:'Fábrica Ejemplo A', modelo:'MC-150', nombre:'Motocarro 150cc', precio:820, moneda:'USD', incoterm:'FOB',
+     atributos:{combustible:'Gasolina', cilindrada_cc:150, cabina:'Sin cabina', tipo_caja:'Pickup / redilas', rodado:'Sencillo', ejes:1, carga_kg:1000, caja_mm:'1600×1100', vel_max_kmh:60, llantas:'4.00-12', peso_kg:370}},
+    {id:'ej-2', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Motocarro', proveedor:'Fábrica Ejemplo B', modelo:'T200W', nombre:'Motocarro 200cc con parabrisas', precio:1050, moneda:'USD', incoterm:'FOB',
+     atributos:{combustible:'Gasolina', cilindrada_cc:200, cabina:'Parabrisas', tipo_caja:'Pickup / redilas', rodado:'Sencillo', ejes:1, carga_kg:1000, caja_mm:'1700×1250', vel_max_kmh:65, llantas:'4.50-12', peso_kg:380}},
+    {id:'ej-3', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Motocarro', proveedor:'Fábrica Ejemplo A', modelo:'MC-300R', nombre:'Motocarro 300cc doble rodado', precio:1490, moneda:'USD', incoterm:'FOB',
+     atributos:{combustible:'Gasolina', cilindrada_cc:300, cabina:'Techo (semicabina)', tipo_caja:'Pickup / redilas', rodado:'Doble', ejes:1, carga_kg:2000, caja_mm:'2200×1400', potencia_kw:12.5, vel_max_kmh:70, llantas:'5.00-12', peso_kg:560}},
+    {id:'ej-4', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Motocarro', proveedor:'Fábrica Ejemplo C', modelo:'K300 Box', nombre:'Motocarro 300cc cabina cerrada caja seca', precio:2650, moneda:'USD', incoterm:'FOB',
+     atributos:{combustible:'Gasolina', cilindrada_cc:300, cabina:'Cabina cerrada', tipo_caja:'Caja seca', rodado:'Doble', ejes:1, carga_kg:2000, caja_mm:'2200×1400', vel_max_kmh:65, llantas:'5.00-12', peso_kg:880}},
+    {id:'ej-5', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Motocarro', proveedor:'Fábrica Ejemplo B', modelo:'T300D', nombre:'Motocarro 300cc volteo', precio:1920, moneda:'USD', incoterm:'FOB',
+     atributos:{combustible:'Gasolina', cilindrada_cc:300, cabina:'Techo (semicabina)', tipo_caja:'Volteo', rodado:'Doble', ejes:1, carga_kg:2000, caja_mm:'2200×1400', vel_max_kmh:65, llantas:'5.00-12', peso_kg:700}},
+    {id:'ej-6', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Mototaxi', proveedor:'Fábrica Ejemplo C', modelo:'P250', nombre:'Mototaxi 250cc', precio:1380, moneda:'USD', incoterm:'FOB',
+     atributos:{combustible:'Gasolina', cilindrada_cc:250, cabina:'Techo con toldo', pasajeros:6, potencia_kw:10, vel_max_kmh:70, llantas:'5.00-12', peso_kg:450}},
+    {id:'ej-7', linea:'SUNL', familia:'Recreativos', categoria:'ATV / Cuatrimoto', proveedor:'Fábrica Ejemplo D', modelo:'Q125', nombre:'Cuatrimoto 125cc juvenil', precio:640, moneda:'USD', incoterm:'FOB',
+     atributos:{combustible:'Gasolina', cilindrada_cc:125, transmision:'Automática', tamano:'Juvenil'}},
+    {id:'ej-8', linea:'SUNL', familia:'Recreativos', categoria:'ATV / Cuatrimoto', proveedor:'Fábrica Ejemplo D', modelo:'Q200', nombre:'Cuatrimoto 200cc', precio:910, moneda:'USD', incoterm:'FOB',
+     atributos:{combustible:'Gasolina', cilindrada_cc:200, transmision:'Semiautomática', tamano:'Adulto'}},
+    {id:'ej-9', linea:'SUNL', familia:'Recreativos', categoria:'UTV / Raizer', proveedor:'Fábrica Ejemplo E', modelo:'U400', nombre:'UTV 400cc 2 plazas', precio:3400, moneda:'USD', incoterm:'FOB',
+     atributos:{combustible:'Gasolina', cilindrada_cc:400, plazas:2, traccion:'4x2'}},
+    {id:'ej-10', linea:'ALZATOR', familia:'Industrial y logística', categoria:'Montacargas', proveedor:'Fábrica Ejemplo F', modelo:'FD30', nombre:'Montacargas diésel 3 t', precio:9800, moneda:'USD', incoterm:'FOB',
+     atributos:{combustible:'Diésel', carga_kg:3000, altura_elev_mm:3000, motor:'Motor de ejemplo', llantas:'Neumáticas'}},
+    {id:'ej-11', linea:'ALZATOR', familia:'Industrial y logística', categoria:'Montacargas', proveedor:'Fábrica Ejemplo G', modelo:'EV20', nombre:'Montacargas eléctrico 2 t', precio:8700, moneda:'USD', incoterm:'FOB',
+     atributos:{combustible:'Eléctrico', carga_kg:2000, altura_elev_mm:3000, llantas:'Macizas'}},
+    {id:'ej-12', linea:'ALZATOR', familia:'Construcción', categoria:'Miniexcavadora', proveedor:'Fábrica Ejemplo H', modelo:'X18', nombre:'Miniexcavadora 1.8 t', precio:9200, moneda:'USD', incoterm:'FOB',
+     atributos:{peso_operativo_t:1.8, combustible:'Diésel', motor:'Motor de ejemplo', potencia_kw:11, emisiones:'Euro V', cabina:'Abierta (techo)'}},
+    {id:'ej-13', linea:'ALZATOR', familia:'Construcción', categoria:'Miniexcavadora', proveedor:'Fábrica Ejemplo F', modelo:'ME35', nombre:'Miniexcavadora 3.5 t', precio:15600, moneda:'USD', incoterm:'FOB',
+     atributos:{peso_operativo_t:3.5, combustible:'Diésel', motor:'Motor de ejemplo', potencia_kw:18, emisiones:'Stage V', cabina:'Cerrada'}},
+    {id:'ej-14', linea:'ALZATOR', familia:'Construcción', categoria:'Excavadora', proveedor:'Fábrica Ejemplo H', modelo:'X80', nombre:'Excavadora 8 t', precio:31000, moneda:'USD', incoterm:'FOB',
+     atributos:{peso_operativo_t:8, combustible:'Diésel', motor:'Motor de ejemplo', potencia_kw:54, emisiones:'Stage III', cabina:'Cerrada'}},
+    {id:'ej-15', linea:'ALZATOR', familia:'Construcción', categoria:'Excavadora', proveedor:'Fábrica Ejemplo G', modelo:'E130', nombre:'Excavadora 13 t', precio:48500, moneda:'USD', incoterm:'FOB',
+     atributos:{peso_operativo_t:13, combustible:'Diésel', motor:'Motor de ejemplo', potencia_kw:86, emisiones:'Stage III', cabina:'Cerrada'}}
+  ]
 };
-// Logotipos inventados: cada proveedor con su forma, su color y sus iniciales.
-var LOGOS = {
-  ocampo:{ini:'AO', col:'#c75a28', forma:'cuadro'},
-  bajio:{ini:'FB', col:'#2c68ad', forma:'circulo'},
-  rivera:{ini:'SR', col:'#6a4db8', forma:'hexagono'},
-  lozano:{ini:'EL', col:'#1d7d55', forma:'cuadro'},
-  galvan:{ini:'RG', col:'#8a6a1c', forma:'circulo'}
-};
-function imgParte(id, cls){
-  return '<span class="pic '+(cls||'')+'" aria-hidden="true"><svg viewBox="0 0 64 64">'+PARTE_SVG[id]+'</svg></span>';
-}
-function logoProv(id, cls){
-  var l=LOGOS[id], forma;
-  if(l.forma==='circulo') forma='<circle cx="32" cy="32" r="30" fill="'+l.col+'"/>';
-  else if(l.forma==='hexagono') forma='<path d="M32 2 58 17v30L32 62 6 47V17z" fill="'+l.col+'"/>';
-  else forma='<rect x="2" y="2" width="60" height="60" rx="14" fill="'+l.col+'"/>';
-  return '<span class="logo '+(cls||'')+'" aria-hidden="true"><svg viewBox="0 0 64 64">'+forma+
-    '<text x="32" y="33" text-anchor="middle" dominant-baseline="central" fill="#fff" font-family="IBM Plex Sans, system-ui, sans-serif" font-weight="600" font-size="22" letter-spacing=".5">'+l.ini+'</text></svg></span>';
-}
 
-var state = {view:'proveedores', sel:{partes:'balatas', proveedores:'ocampo'}, q:'', animate:false};
+// Nombres para mostrar de cada característica (los datos reales traen los suyos).
+var ETIQUETAS = {
+  combustible:'Combustible', cilindrada_cc:'Cilindrada (cc)', cabina:'Cabina', tipo_caja:'Tipo de caja', rodado:'Rodado',
+  ejes:'Ejes', carga_kg:'Carga máx. (kg)', caja_mm:'Caja (mm)', potencia_kw:'Potencia (kW)', vel_max_kmh:'Vel. máx. (km/h)',
+  llantas:'Llantas', peso_kg:'Peso (kg)', pasajeros:'Pasajeros', peso_operativo_t:'Peso operativo (t)', motor:'Motor',
+  emisiones:'Emisiones', hidraulica:'Hidráulica', transmision:'Transmisión', tamano:'Tamaño', plazas:'Plazas',
+  traccion:'Tracción', altura_elev_mm:'Altura de elevación (mm)'
+};
+// Características que se pueden filtrar (en el orden en que salen).
+var FILTRABLES = ['cabina','tipo_caja','cilindrada_cc','combustible','rodado','ejes','pasajeros','transmision','tamano','plazas',
+  'traccion','peso_operativo_t','emisiones','carga_kg','llantas'];
+
+var D = EJEMPLO, esLocal = false;
+var state = {linea:'SUNL', cat:null, filtros:{}, q:'', sel:null, comp:[], vista:'ficha', animate:false};
 
 var $ = function(id){ return document.getElementById(id); };
-function parte(id){ return PARTES.filter(function(p){ return p.id===id; })[0]; }
-function prov(id){ return PROVEEDORES.filter(function(p){ return p.id===id; })[0]; }
-function ofertasDeParte(id){ return OFERTAS.filter(function(o){ return o.parte===id; }); }
-function ofertasDeProv(id){ return OFERTAS.filter(function(o){ return o.prov===id; }); }
-var fmtMXN = new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
-function precio(n){ return fmtMXN.format(n); }
-function dias(n){ return n===1 ? '1 día' : n+' días'; }
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 var DIACRITICOS = new RegExp('['+String.fromCharCode(0x300)+'-'+String.fromCharCode(0x36f)+']','g');
 function norm(s){ return String(s).toLowerCase().normalize('NFD').replace(DIACRITICOS,''); }
-var CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
-var esCelular = window.matchMedia('(max-width:760px)');
+function etiqueta(k){ return (D.etiquetas && D.etiquetas[k]) || ETIQUETAS[k] || k; }
+function vacio(v){ return v===null || v===undefined || v===''; }
+function valor(v){ return typeof v==='number' ? v.toLocaleString('es-MX') : String(v); }
+function dinero(p){
+  try{ return new Intl.NumberFormat('es-MX',{style:'currency',currency:p.moneda||'USD',currencyDisplay:'code',maximumFractionDigits:2}).format(p.precio); }
+  catch(e){ return p.precio+' '+(p.moneda||''); }
+}
+function producto(id){ return D.productos.filter(function(p){ return p.id===id; })[0]; }
+var esCelular = window.matchMedia('(max-width:820px)');
 
-// La búsqueda encuentra una parte también por sus proveedores, y al revés.
-function coincide(texto){ return !state.q || norm(texto).indexOf(norm(state.q))>=0; }
-function partesVisibles(){
-  return PARTES.filter(function(p){
-    var provs = ofertasDeParte(p.id).map(function(o){ return prov(o.prov).nombre; }).join(' ');
-    return coincide([p.nombre,p.codigo,p.categoria,p.compat,provs].join(' '));
+// Tipos de la línea elegida que tienen productos, agrupados por familia.
+function familias(){
+  var out=[], cats=D.categorias[state.linea]||{};
+  Object.keys(cats).forEach(function(fam){
+    var tipos=Object.keys(cats[fam]).map(function(c){
+      return {cat:c, n:D.productos.filter(function(p){ return p.linea===state.linea && p.categoria===c; }).length};
+    }).filter(function(t){ return t.n; });
+    if(tipos.length) out.push({fam:fam, tipos:tipos});
   });
+  return out;
 }
-function provVisibles(){
-  return PROVEEDORES.filter(function(v){
-    var partes = ofertasDeProv(v.id).map(function(o){ var p=parte(o.parte); return p.nombre+' '+p.codigo; }).join(' ');
-    return coincide([v.nombre,v.ciudad,v.contacto,partes].join(' '));
+function camposDe(cat){
+  var cats=D.categorias[state.linea]||{};
+  for(var fam in cats){ if(cats[fam][cat]) return cats[fam][cat]; }
+  return [];
+}
+function enCategoria(){ return D.productos.filter(function(p){ return p.linea===state.linea && p.categoria===state.cat; }); }
+function textoDe(p){
+  var a=p.atributos||{};
+  return [p.nombre,p.modelo,p.proveedor].concat(Object.keys(a).map(function(k){ return vacio(a[k])?'':a[k]; })).join(' ');
+}
+function visibles(){
+  return enCategoria().filter(function(p){
+    for(var k in state.filtros){
+      var v=k==='proveedor'?p.proveedor:(p.atributos||{})[k];
+      if(String(v)!==state.filtros[k]) return false;
+    }
+    return !state.q || norm(textoDe(p)).indexOf(norm(state.q))>=0;
+  }).sort(function(a,b){ return a.precio-b.precio; });
+}
+// Resumen corto de un producto: lo que más sirve para distinguirlo de los demás de su tipo.
+function resumen(p){
+  var a=p.atributos||{}, partes=[];
+  ['cilindrada_cc','peso_operativo_t','carga_kg','cabina','tipo_caja','combustible'].forEach(function(k){
+    if(vacio(a[k]) || partes.length>=3) return;
+    if(k==='cilindrada_cc') partes.push(a[k]+' cc');
+    else if(k==='peso_operativo_t') partes.push(valor(a[k])+' t');
+    else if(k==='carga_kg' && p.categoria.indexOf('Montacargas')===0) partes.push(valor(a[k])+' kg');
+    else if(k!=='carga_kg') partes.push(a[k]);
   });
+  return partes.join(' · ');
 }
 
-function renderTabs(){
-  $('n-partes').textContent = PARTES.length;
-  $('n-prov').textContent = PROVEEDORES.length;
-  $('tab-partes').setAttribute('aria-selected', state.view==='partes');
-  $('tab-prov').setAttribute('aria-selected', state.view==='proveedores');
+function renderLineas(){
+  $('lineas').innerHTML=Object.keys(D.categorias).map(function(l){
+    var n=D.productos.filter(function(p){ return p.linea===l; }).length;
+    return '<button role="tab" data-linea="'+l+'" aria-selected="'+(state.linea===l)+'">'+l+' <span class="n">'+n+'</span></button>';
+  }).join('');
 }
-
+function renderCats(){
+  $('cats').innerHTML=familias().map(function(f){
+    return '<div class="fam"><small>'+esc(f.fam)+'</small><div class="fam-row">'+f.tipos.map(function(t){
+      return '<button class="cat" data-cat="'+esc(t.cat)+'" aria-pressed="'+(state.cat===t.cat)+'">'+esc(t.cat)+' <span class="n">'+t.n+'</span></button>';
+    }).join('')+'</div></div>';
+  }).join('');
+}
+function renderFiltros(){
+  var base=enCategoria(), html='';
+  var campos=['proveedor'].concat(FILTRABLES.filter(function(k){ return camposDe(state.cat).indexOf(k)>=0; }));
+  campos.forEach(function(k){
+    var vals={};
+    base.forEach(function(p){ var v=k==='proveedor'?p.proveedor:(p.atributos||{})[k]; if(!vacio(v)) vals[String(v)]=v; });
+    var lista=Object.keys(vals).sort(function(a,b){
+      var x=vals[a], y=vals[b]; return (typeof x==='number' && typeof y==='number') ? x-y : String(a).localeCompare(b,'es');
+    });
+    if(lista.length<2 && !state.filtros[k]) return;
+    var on=state.filtros[k]!==undefined;
+    html+='<label class="f"><span>'+esc(k==='proveedor'?'Proveedor':etiqueta(k))+'</span><select data-f="'+k+'" class="'+(on?'on':'')+'">'+
+      '<option value="">Todos</option>'+lista.map(function(v){
+        return '<option value="'+esc(v)+'"'+(state.filtros[k]===v?' selected':'')+'>'+esc(valor(vals[v]))+'</option>';
+      }).join('')+'</select></label>';
+  });
+  if(Object.keys(state.filtros).length) html+='<button class="clear" data-clear>Quitar filtros</button>';
+  $('filters').innerHTML=html;
+}
 function renderList(){
-  var html='';
-  if(state.view==='partes'){
-    var ps=partesVisibles();
-    ps.forEach(function(p){
-      var os=ofertasDeParte(p.id);
-      var min=Math.min.apply(null, os.map(function(o){ return o.precio; }));
-      html+='<li><button class="item" data-id="'+p.id+'" aria-current="'+(state.sel.partes===p.id)+'">'+imgParte(p.id)+
+  var ps=visibles(), html='';
+  ps.forEach(function(p){
+    var cmp=state.comp.indexOf(p.id)>=0;
+    html+='<li class="'+(state.sel===p.id && state.vista==='ficha'?'cur':'')+'">'+
+      '<button class="item" data-id="'+esc(p.id)+'">'+
         '<span class="item-name">'+esc(p.nombre)+'</span>'+
-        '<span class="item-side"><b>desde '+precio(min)+'</b>'+os.length+' proveedores</span>'+
-        '<span class="item-sub"><span class="code">'+p.codigo+'</span> · '+esc(p.categoria)+'</span>'+
-      '</button></li>';
-    });
-    if(!ps.length) html='<li class="empty-list">Ninguna parte coincide con “'+esc(state.q)+'”.</li>';
-  } else {
-    var vs=provVisibles();
-    vs.forEach(function(v){
-      var n=ofertasDeProv(v.id).length;
-      html+='<li><button class="item" data-id="'+v.id+'" aria-current="'+(state.sel.proveedores===v.id)+'">'+logoProv(v.id)+
-        '<span class="item-name">'+esc(v.nombre)+'</span>'+
-        '<span class="item-side">'+n+(n===1?' parte':' partes')+'</span>'+
-        '<span class="item-sub">'+esc(v.ciudad)+'</span>'+
-      '</button></li>';
-    });
-    if(!vs.length) html='<li class="empty-list">Ningún proveedor coincide con “'+esc(state.q)+'”.</li>';
-  }
+        '<span class="item-side"><b>'+esc(dinero(p))+'</b>'+esc(p.incoterm||'')+'</span>'+
+        '<span class="item-sub">'+esc(p.proveedor)+(resumen(p)?' · '+esc(resumen(p)):'')+'</span>'+
+      '</button>'+
+      '<button class="pick" data-pick="'+esc(p.id)+'" aria-pressed="'+cmp+'" aria-label="Comparar '+esc(p.nombre)+'" title="Comparar"><i></i></button>'+
+    '</li>';
+  });
+  if(!ps.length) html='<li class="empty-list">Ningún producto coincide'+(state.q?' con “'+esc(state.q)+'”':' con estos filtros')+'.</li>';
   $('list').innerHTML=html;
 }
 
-function kv(lbl,val){ return '<span class="kv"><small>'+lbl+'</small><span>'+val+'</span></span>'; }
-
-function detalleParte(p){
-  var os=ofertasDeParte(p.id);
-  var min=Math.min.apply(null, os.map(function(o){ return o.precio; }));
-  var rapido=Math.min.apply(null, os.map(function(o){ return o.dias; }));
-  var filas=os.slice().sort(function(a,b){ return a.precio-b.precio; }).map(function(o){
-    var v=prov(o.prov);
-    var chips=(o.precio===min?'<span class="chip ok">Mejor precio</span>':'')+
-              (o.dias===rapido?'<span class="chip fast">Entrega más rápida</span>':'');
-    return '<button class="row" data-go="proveedores:'+v.id+'">'+
-      '<span class="who">'+logoProv(v.id,'sm')+'<span class="who-txt"><span class="who-name">'+esc(v.nombre)+'</span>'+
-        '<span class="who-sub">'+esc(o.marca)+' · '+esc(v.ciudad)+'</span>'+
-        (chips?'<span class="chips">'+chips+'</span>':'')+'</span></span>'+
-      kv('Precio', precio(o.precio))+kv('Entrega', dias(o.dias))+kv('Garantía', esc(o.garantia))+CHEV+
-    '</button>';
-  }).join('');
-  return '<button class="back" data-back>‹ Partes</button>'+
-    '<div class="d-top">'+imgParte(p.id,'lg')+'<div class="d-head"><span class="eyebrow">'+esc(p.categoria)+'</span><h2>'+esc(p.nombre)+'</h2>'+
-      '<div class="facts"><span>Código <b class="code">'+p.codigo+'</b></span><span>Unidad <b>'+esc(p.unidad)+'</b></span></div></div></div>'+
-    '<div class="block"><h3>Compatible con</h3><div>'+esc(p.compat)+'</div></div>'+
-    '<div class="block"><h3>Proveedores <span class="n">'+os.length+'</span></h3><div class="rows">'+filas+'</div></div>';
+function spec(lbl,v){
+  return '<div class="spec"><small>'+esc(lbl)+'</small><span'+(vacio(v)?' class="nd">No indicado':'>'+esc(valor(v)))+'</span></div>';
 }
-
-function copiable(lbl,val){
-  return '<div class="c"><small>'+lbl+'</small><div class="c-val"><span>'+esc(val)+'</span>'+
-    '<button class="copy" data-copy="'+esc(val)+'">Copiar</button></div></div>';
-}
-
-function detalleProv(v){
-  var os=ofertasDeProv(v.id);
-  var filas=os.map(function(o){
-    var p=parte(o.parte);
-    return '<button class="row" data-go="partes:'+p.id+'">'+
-      '<span class="who">'+imgParte(p.id,'sm')+'<span class="who-txt"><span class="who-name">'+esc(p.nombre)+'</span>'+
-        '<span class="who-sub"><span class="code">'+p.codigo+'</span> · '+esc(o.marca)+'</span></span></span>'+
-      kv('Precio', precio(o.precio))+kv('Entrega', dias(o.dias))+kv('Garantía', esc(o.garantia))+CHEV+
-    '</button>';
-  }).join('');
-  return '<button class="back" data-back>‹ Proveedores</button>'+
-    '<div class="d-top">'+logoProv(v.id,'lg')+'<div class="d-head"><span class="eyebrow">'+esc(v.ciudad)+'</span><h2>'+esc(v.nombre)+'</h2>'+
-      '<div class="facts"><span>Crédito <b>'+esc(v.credito)+'</b></span></div></div></div>'+
-    '<div class="block"><h3>Contacto</h3><div class="contact">'+
-      '<div class="c"><small>Nombre</small><div class="c-val"><span>'+esc(v.contacto)+'</span></div></div>'+
-      copiable('Teléfono', v.tel)+copiable('Correo', v.correo)+
-      '<div class="c"><small>Ciudad</small><div class="c-val"><span>'+esc(v.ciudad)+'</span></div></div>'+
+function ficha(p){
+  var a=p.atributos||{}, campos=camposDe(p.categoria);
+  var extra=Object.keys(a).filter(function(k){ return campos.indexOf(k)<0 && !vacio(a[k]); });
+  var enComp=state.comp.indexOf(p.id)>=0;
+  return '<button class="back" data-back>‹ '+esc(p.categoria)+'</button>'+
+    '<div class="d-head"><span class="eyebrow">'+esc(p.linea)+' · '+esc(p.categoria)+'</span><h2>'+esc(p.nombre)+'</h2>'+
+      '<div class="facts"><span>Proveedor <b>'+esc(p.proveedor)+'</b></span><span>Modelo <b class="code">'+esc(p.modelo||'')+'</b></span>'+
+      (p.fecha?'<span>Cotización <b>'+esc(p.fecha)+'</b></span>':'')+'</div></div>'+
+    '<div class="price"><b>'+esc(dinero(p))+'</b><span>'+esc(p.incoterm||'')+'</span>'+
+      (p.piezas_40hq?'<span>'+p.piezas_40hq+' piezas por contenedor 40HQ</span>':'')+'</div>'+
+    '<button class="btn'+(enComp?' on':'')+'" data-pick="'+esc(p.id)+'">'+(enComp?'En comparación ✓':'Agregar a comparar')+'</button>'+
+    '<div class="block"><h3>Características</h3><div class="specs">'+
+      campos.concat(extra).map(function(k){ return spec(etiqueta(k), a[k]); }).join('')+
+      (p.medidas_mm?spec('Medidas (mm)', p.medidas_mm):'')+(p.empaque?spec('Empaque', p.empaque):'')+
     '</div></div>'+
-    '<div class="block"><h3>Partes que vende <span class="n">'+os.length+'</span></h3><div class="rows">'+filas+'</div></div>';
+    (p.notas?'<div class="note">'+esc(p.notas)+'</div>':'')+
+    (p.archivo?'<div class="src">Fuente: '+esc(p.archivo)+'</div>':'');
 }
-
+function comparacion(){
+  var ps=state.comp.map(producto).filter(Boolean);
+  if(!ps.length) return '<p class="hint">Marca la casilla de dos o más productos para compararlos.</p>';
+  var campos=[];
+  ps.forEach(function(p){ camposDe(p.categoria).concat(Object.keys(p.atributos||{})).forEach(function(k){ if(campos.indexOf(k)<0) campos.push(k); }); });
+  campos=campos.filter(function(k){ return ps.some(function(p){ return !vacio((p.atributos||{})[k]); }); });
+  var min=Math.min.apply(null, ps.map(function(p){ return p.precio; }));
+  var monedas=ps.map(function(p){ return p.moneda; }).filter(function(m,i,a){ return a.indexOf(m)===i; });
+  function fila(lbl,vals,num){
+    var dif=vals.map(function(v){ return vacio(v)?'':String(v); }).filter(function(v,i,a){ return a.indexOf(v)===i; }).length>1;
+    return '<tr class="'+(dif?'diff':'')+'"><th>'+esc(lbl)+'</th>'+vals.map(function(v){
+      return '<td class="'+(num?'num':'')+'">'+(vacio(v)?'<span class="sub">—</span>':esc(valor(v)))+'</td>';
+    }).join('')+'</tr>';
+  }
+  return '<button class="back" data-back>‹ Lista</button>'+
+    '<div class="d-head"><span class="eyebrow">Comparación</span><h2>'+ps.length+' productos</h2>'+
+    '<div class="facts"><span>Lo que es igual en todos sale en gris.</span></div></div>'+
+    '<div class="cmp-wrap"><table class="cmp"><thead><tr><th></th>'+ps.map(function(p){
+      return '<th>'+esc(p.nombre)+'<span class="sub">'+esc(p.proveedor)+' · '+esc(p.modelo||'')+'</span>'+
+        '<button class="x" data-pick="'+esc(p.id)+'">Quitar</button></th>';
+    }).join('')+'</tr></thead><tbody>'+
+      '<tr class="diff"><th>Precio</th>'+ps.map(function(p){
+        return '<td class="num'+(p.precio===min && monedas.length===1 && ps.length>1?' best':'')+'">'+esc(dinero(p))+'</td>';
+      }).join('')+'</tr>'+
+      fila('Incoterm', ps.map(function(p){ return p.incoterm; }))+
+      fila('Tipo', ps.map(function(p){ return p.categoria; }))+
+      campos.map(function(k){ return fila(etiqueta(k), ps.map(function(p){ return (p.atributos||{})[k]; }), ps.some(function(p){ return typeof (p.atributos||{})[k]==='number'; })); }).join('')+
+      fila('Medidas (mm)', ps.map(function(p){ return p.medidas_mm; }))+
+      fila('Piezas por 40HQ', ps.map(function(p){ return p.piezas_40hq; }), true)+
+      fila('Cotización', ps.map(function(p){ return p.fecha; }))+
+    '</tbody></table></div>';
+}
 function renderDetail(){
-  var id=state.sel[state.view];
-  var html = state.view==='partes' ? detalleParte(parte(id)) : detalleProv(prov(id));
+  var html;
+  if(state.vista==='comparar') html=comparacion();
+  else { var p=producto(state.sel); html=p?ficha(p):'<p class="hint">Escoge un producto para ver su ficha.</p>'; }
+  $('main').setAttribute('data-vista', state.vista);
   $('detail').innerHTML='<div class="detail-in'+(state.animate?' enter':'')+'">'+html+'</div>';
+  state.animate=false;
+}
+function renderBar(){
+  var n=state.comp.length;
+  $('bar').hidden = n===0 || (state.vista==='comparar' && $('main').getAttribute('data-show')==='detail');
+  $('bar-n').textContent = n===1 ? '1 para comparar' : n+' para comparar';
+  $('bar-go').disabled = n<2;
+  $('bar-go').style.opacity = n<2 ? '.5' : '1';
+}
+function render(){ renderLineas(); renderCats(); renderFiltros(); renderList(); renderDetail(); renderBar(); }
+
+function elegirCategoria(cat){
+  state.cat=cat; state.filtros={};
+  var ps=visibles(); state.sel=ps.length?ps[0].id:null;
+  if(state.vista!=='comparar') state.vista='ficha';
+}
+function elegirLinea(l){
+  state.linea=l;
+  var f=familias(); elegirCategoria(f.length?f[0].tipos[0].cat:null);
+}
+function mostrar(vista){ state.vista=vista; state.animate=true; $('main').setAttribute('data-show','detail'); if(esCelular.matches) window.scrollTo(0,0); }
+function alternar(id){
+  var i=state.comp.indexOf(id);
+  if(i>=0) state.comp.splice(i,1); else state.comp.push(id);
+  if(state.vista==='comparar' && !state.comp.length) state.vista='ficha';
 }
 
-function render(){ renderTabs(); renderList(); renderDetail(); }
-
-function abrir(view,id){
-  state.view=view; state.sel[view]=id; state.animate=true;
-  $('main').setAttribute('data-show','detail');
-  try{ history.replaceState(null,'','#'+(view==='partes'?'parte-':'prov-')+id); }catch(e){}
-  render();
-  if(esCelular.matches) window.scrollTo(0,0);
-}
-
+$('lineas').addEventListener('click',function(e){ var b=e.target.closest('[data-linea]'); if(!b) return; elegirLinea(b.getAttribute('data-linea')); state.animate=true; $('main').setAttribute('data-show','list'); render(); });
+$('cats').addEventListener('click',function(e){ var b=e.target.closest('[data-cat]'); if(!b) return; elegirCategoria(b.getAttribute('data-cat')); state.animate=true; $('main').setAttribute('data-show','list'); render(); });
+$('filters').addEventListener('change',function(e){
+  var s=e.target.closest('[data-f]'); if(!s) return;
+  if(s.value) state.filtros[s.getAttribute('data-f')]=s.value; else delete state.filtros[s.getAttribute('data-f')];
+  renderFiltros(); renderList();
+});
+$('filters').addEventListener('click',function(e){ if(e.target.closest('[data-clear]')){ state.filtros={}; renderFiltros(); renderList(); } });
 $('list').addEventListener('click',function(e){
+  var pk=e.target.closest('[data-pick]');
+  if(pk){ alternar(pk.getAttribute('data-pick')); renderList(); renderBar(); if(state.vista==='comparar' || producto(state.sel)) renderDetail(); return; }
   var b=e.target.closest('.item'); if(!b) return;
-  abrir(state.view, b.getAttribute('data-id'));
+  state.sel=b.getAttribute('data-id'); mostrar('ficha'); renderList(); renderDetail(); renderBar();
 });
 $('detail').addEventListener('click',function(e){
-  var copy=e.target.closest('[data-copy]');
-  if(copy){
-    var val=copy.getAttribute('data-copy');
-    var listo=function(){ copy.textContent='Copiado'; setTimeout(function(){ copy.textContent='Copiar'; },1400); };
-    var seleccionar=function(){
-      var s=copy.previousElementSibling, r=document.createRange(); r.selectNodeContents(s);
-      var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
-    };
-    try{ navigator.clipboard.writeText(val).then(listo, seleccionar); }catch(err){ seleccionar(); }
-    return;
-  }
-  if(e.target.closest('[data-back]')){ $('main').setAttribute('data-show','list'); return; }
-  var go=e.target.closest('[data-go]'); if(!go) return;
-  var par=go.getAttribute('data-go').split(':');
-  abrir(par[0], par[1]);
+  if(e.target.closest('[data-back]')){ $('main').setAttribute('data-show','list'); if(state.vista==='comparar') state.vista='ficha'; renderList(); renderDetail(); renderBar(); return; }
+  var pk=e.target.closest('[data-pick]');
+  if(pk){ alternar(pk.getAttribute('data-pick')); renderList(); renderDetail(); renderBar(); }
 });
-[$('tab-partes'),$('tab-prov')].forEach(function(t){
-  t.addEventListener('click',function(){
-    state.view=t.getAttribute('data-view'); state.animate=true;
-    $('main').setAttribute('data-show','list');
-    render();
-  });
-});
+$('bar-go').addEventListener('click',function(){ if(state.comp.length<2) return; mostrar('comparar'); renderList(); renderDetail(); renderBar(); });
+$('bar-no').addEventListener('click',function(){ state.comp=[]; if(state.vista==='comparar') state.vista='ficha'; renderList(); renderDetail(); renderBar(); });
 $('q').addEventListener('input',function(){ state.q=this.value.trim(); renderList(); });
 
-// Abre la ficha que traiga el enlace (#parte-balatas, #prov-ocampo).
-(function(){
-  var h=(location.hash||'').slice(1), m=h.match(/^(parte|prov)-([a-z]+)$/);
-  if(m){
-    var view=m[1]==='parte'?'partes':'proveedores';
-    if(view==='partes'?parte(m[2]):prov(m[2])){ state.view=view; state.sel[view]=m[2]; $('main').setAttribute('data-show','detail'); }
-  }
-  render();
-})();
+// Si hay datos reales en la computadora (datos/productos.json), se usan; si no, los de ejemplo.
+function arrancar(){ elegirLinea(Object.keys(D.categorias)[0]); render(); }
+fetch('datos/productos.json',{cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){
+  if(!j || !j.productos || !j.productos.length) throw 0;
+  D=j; esLocal=true;
+  $('origen').textContent='Datos reales · solo en esta computadora';
+  $('origen').className='tag local';
+}).catch(function(){}).then(arrancar);
 </script>
+</body>
+</html>
