@@ -1,0 +1,14 @@
+# El repo es público: nada con precios ni datos de proveedores.
+# Catálogos originales (PDF, Excel) de los proveedores
+Catalogos/
+# Datos capturados y su generador (traen precios)
+datos/
+build_catalogo.py
+*.xlsx
+*.xls
+# Notas internas de avance (nombres de proveedores y pendientes)
+AVANCE.md
+# Datos reales de prueba y capturas
+.local/
+.impeccable/review/
+__pycache__/

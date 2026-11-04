@@ -1,0 +1,414 @@
+<meta charset="utf-8">
+<title>Catálogo de Proveedores</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: lista a la izquierda y ficha a la derecha; en celular, una a la vez. */
+:root{
+  --bg:#f4f6f7; --surface:#ffffff; --surface-2:#edf0f2; --line:#dfe3e7;
+  --fg:#14181b; --muted:#5c646d; --faint:#8a929b;
+  --accent:#0b6c76; --accent-soft:#e2f0f1;
+  --ok:#1c7445; --ok-soft:#e3f2e8;
+  --font:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1113; --surface:#161a1d; --surface-2:#1e2327; --line:#2a3036;
+    --fg:#e7eaed; --muted:#a0a8b0; --faint:#717982;
+    --accent:#52b6c0; --accent-soft:#14302f;
+    --ok:#5dc38a; --ok-soft:#15291d;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1113; --surface:#161a1d; --surface-2:#1e2327; --line:#2a3036;
+  --fg:#e7eaed; --muted:#a0a8b0; --faint:#717982;
+  --accent:#52b6c0; --accent-soft:#14302f;
+  --ok:#5dc38a; --ok-soft:#15291d;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.5;
+  -webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+.app{max-width:1080px;margin:0 auto;padding-block:28px 56px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  display:flex;flex-direction:column;gap:20px}
+
+/* Encabezado */
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px 24px}
+.brand{display:flex;flex-direction:column;gap:6px;min-width:0}
+h1{margin:0;font-size:1.6rem;font-weight:600;letter-spacing:-.015em;line-height:1.2;text-wrap:balance}
+.tag{align-self:flex-start;font-size:.72rem;font-weight:500;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--muted);background:var(--surface-2);border-radius:999px;padding:3px 10px}
+.search{position:relative;flex:1 1 260px;max-width:360px}
+.search input{width:100%;font:inherit;font-size:16px;color:var(--fg);background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);padding:10px 12px 10px 36px;outline:none;
+  transition:border-color .15s ease}
+.search input::placeholder{color:var(--faint)}
+.search input:focus{border-color:var(--accent)}
+.search svg{position:absolute;left:12px;top:50%;width:16px;height:16px;margin-top:-8px;color:var(--faint);pointer-events:none}
+
+/* Selector Partes / Proveedores */
+.seg{display:inline-flex;align-self:flex-start;background:var(--surface-2);border-radius:var(--r);padding:3px;gap:2px}
+.seg button{padding:7px 14px;border-radius:8px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:8px;
+  transition:background-color .15s ease,color .15s ease}
+.seg button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.seg .n{font-family:var(--mono);font-size:.78rem;color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* Dos paneles */
+.main{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:24px;align-items:start}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin:0;padding:0;list-style:none}
+.list li+li{border-top:1px solid var(--line)}
+.item{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 12px;padding:12px 16px;
+  transition:background-color .12s ease}
+.item:hover{background:var(--surface-2)}
+.item[aria-current="true"]{background:var(--accent-soft)}
+.item[aria-current="true"] .item-name{color:var(--accent)}
+.item-name{grid-column:2;grid-row:1;align-self:end;font-weight:500;min-width:0}
+.item-sub{grid-column:2;grid-row:2;align-self:start;font-size:.84rem;color:var(--muted);min-width:0}
+.item-side{grid-column:3;grid-row:1 / span 2;align-self:center;text-align:right;font-size:.82rem;color:var(--muted);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.item-side b{display:block;font-weight:500;color:var(--fg);font-family:var(--mono);font-size:.86rem}
+.code{font-family:var(--mono);font-size:.82em;letter-spacing:.01em}
+
+/* Imagen de parte (ilustracion en trazo) y logotipo de proveedor */
+.pic{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:9px;background:var(--surface-2)}
+.pic svg{width:30px;height:30px;display:block}
+.pic .s{fill:none;stroke:var(--muted);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.pic .f{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2.4;stroke-linejoin:round}
+.pic .d{fill:var(--muted)}
+.logo{flex:none;display:block;width:40px;height:40px}
+.logo svg{width:100%;height:100%;display:block}
+.pic.lg{width:84px;height:84px;border-radius:16px}
+.pic.lg svg{width:60px;height:60px}
+.logo.lg{width:72px;height:72px}
+.pic.sm,.logo.sm{width:34px;height:34px}
+.pic.sm svg{width:25px;height:25px}
+.item>.pic,.item>.logo{grid-column:1;grid-row:1 / span 2;align-self:center}
+.d-top{display:flex;align-items:center;gap:18px}
+.d-top .d-head{min-width:0}
+.empty-list{padding:28px 16px;color:var(--muted);font-size:.9rem;text-align:center}
+
+/* Ficha */
+.detail{min-width:0}
+.detail-in{display:flex;flex-direction:column;gap:22px}
+.detail-in.enter{animation:enter .18s cubic-bezier(.2,.8,.2,1)}
+@keyframes enter{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.back{display:none;align-self:flex-start;font-weight:500;color:var(--accent);padding:4px 0}
+.eyebrow{font-size:.74rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.d-head{display:flex;flex-direction:column;gap:6px}
+h2{margin:0;font-size:1.45rem;font-weight:600;letter-spacing:-.012em;line-height:1.25;text-wrap:balance}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.88rem;color:var(--muted)}
+.facts span b{font-weight:500;color:var(--fg)}
+h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:baseline;gap:8px}
+h3 .n{font-family:var(--mono);font-weight:400;color:var(--faint)}
+.block{display:flex;flex-direction:column;gap:10px}
+
+/* Renglones de oferta (parte <-> proveedor) */
+.rows{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.row{width:100%;display:grid;grid-template-columns:minmax(0,1.7fr) repeat(3,minmax(0,1fr)) 16px;gap:8px 16px;
+  align-items:center;padding:14px 16px;transition:background-color .12s ease}
+.row+.row{border-top:1px solid var(--line)}
+.row:hover{background:var(--surface-2)}
+.row:hover .chev{color:var(--accent);transform:translateX(2px)}
+.who{min-width:0;display:flex;align-items:flex-start;gap:12px}
+.who-txt{min-width:0;display:flex;flex-direction:column;gap:4px}
+.who-name{font-weight:500}
+.who-sub{font-size:.84rem;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:.72rem;font-weight:500;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.fast{background:var(--accent-soft);color:var(--accent)}
+.kv{display:flex;flex-direction:column;gap:1px;min-width:0}
+.kv small{font-size:.72rem;color:var(--faint);letter-spacing:.02em}
+.kv span{font-family:var(--mono);font-size:.92rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chev{color:var(--faint);width:16px;height:16px;transition:transform .15s ease,color .15s ease}
+
+/* Contacto del proveedor */
+.contact{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.c{background:var(--surface);padding:12px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.c small{font-size:.72rem;color:var(--faint);letter-spacing:.02em}
+.c-val{display:flex;align-items:center;gap:8px;min-width:0}
+.c-val span{overflow-wrap:anywhere;user-select:all}
+.copy{flex:none;font-size:.74rem;font-weight:500;color:var(--accent);padding:2px 6px;border-radius:6px}
+.copy:hover{background:var(--accent-soft)}
+
+@media (max-width:760px){
+  .main{grid-template-columns:minmax(0,1fr)}
+  .main[data-show="list"] .detail{display:none}
+  .main[data-show="detail"] .list-wrap{display:none}
+  .back{display:inline-flex}
+  .row{grid-template-columns:repeat(3,minmax(0,1fr)) 16px}
+  .row .who{grid-column:1 / 4}
+  .row .chev{grid-column:4;grid-row:1}
+  .contact{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Catálogo de proveedores</h1>
+      <span class="tag">Maqueta · datos de ejemplo</span>
+    </div>
+    <label class="search" for="q">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Buscar parte, código o proveedor" autocomplete="off" aria-label="Buscar">
+    </label>
+  </header>
+
+  <div class="seg" role="tablist" aria-label="Ver por">
+    <button id="tab-prov" role="tab" aria-selected="true" data-view="proveedores">Proveedores <span class="n" id="n-prov"></span></button>
+    <button id="tab-partes" role="tab" aria-selected="false" data-view="partes">Partes <span class="n" id="n-partes"></span></button>
+  </div>
+
+  <div class="main" id="main" data-show="list">
+    <div class="list-wrap"><ul class="list" id="list"></ul></div>
+    <section class="detail" id="detail" aria-live="polite"></section>
+  </div>
+</div>
+
+<script>
+var PARTES = [
+  {id:'balatas', nombre:'Balatas delanteras', categoria:'Frenos', codigo:'BF-2041', unidad:'Juego de 4 piezas',
+   compat:'Nissan Versa 2015–2023 · Nissan March 2012–2020'},
+  {id:'amortiguador', nombre:'Amortiguador delantero', categoria:'Suspensión', codigo:'AD-3317', unidad:'Pieza',
+   compat:'Chevrolet Aveo 2012–2018 · Chevrolet Sonic 2013–2016'},
+  {id:'bateria', nombre:'Batería 12 V 45 Ah', categoria:'Eléctrico', codigo:'BT-1245', unidad:'Pieza',
+   compat:'Grupo 35 · compactos y subcompactos'}
+];
+var PROVEEDORES = [
+  {id:'ocampo', nombre:'Autopartes Ocampo', ciudad:'Guadalajara, Jal.', contacto:'Laura Ocampo',
+   tel:'33 3615 2290', correo:'ventas@autopartesocampo.mx', credito:'30 días'},
+  {id:'bajio', nombre:'Frenos del Bajío', ciudad:'León, Gto.', contacto:'Ricardo Méndez',
+   tel:'477 712 4085', correo:'pedidos@frenosdelbajio.mx', credito:'15 días'},
+  {id:'rivera', nombre:'Suspensiones Rivera', ciudad:'Zapopan, Jal.', contacto:'Andrés Rivera',
+   tel:'33 3833 1174', correo:'contacto@suspensionesrivera.mx', credito:'Contado'},
+  {id:'lozano', nombre:'Energía Automotriz Lozano', ciudad:'Monterrey, N.L.', contacto:'Mariana Lozano',
+   tel:'81 8340 5521', correo:'mlozano@energialozano.mx', credito:'30 días'},
+  {id:'galvan', nombre:'Refaccionaria Galván', ciudad:'Tlaquepaque, Jal.', contacto:'Jorge Galván',
+   tel:'33 3657 8802', correo:'jgalvan@refgalvan.mx', credito:'8 días'}
+];
+// Quién vende qué: precio por unidad (MXN), días hábiles de entrega, marca y garantía.
+var OFERTAS = [
+  {parte:'balatas', prov:'ocampo', precio:689, dias:2, marca:'Frenomax', garantia:'6 meses'},
+  {parte:'balatas', prov:'bajio', precio:612, dias:4, marca:'TecFren', garantia:'6 meses'},
+  {parte:'amortiguador', prov:'ocampo', precio:1240, dias:2, marca:'Suspentec', garantia:'12 meses'},
+  {parte:'amortiguador', prov:'rivera', precio:1155, dias:1, marca:'RideLine', garantia:'12 meses'},
+  {parte:'bateria', prov:'lozano', precio:2390, dias:1, marca:'VoltaMax', garantia:'18 meses'},
+  {parte:'bateria', prov:'galvan', precio:2280, dias:3, marca:'Energex', garantia:'12 meses'}
+];
+
+// Ilustraciones de cada parte, en trazo, para que lean igual en tema claro y oscuro.
+var PARTE_SVG = {
+  balatas:'<path d="M9 24c11-9 35-9 46 0v13c0 4-3 7-7 7H16c-4 0-7-3-7-7z" class="s"/><path d="M15 27c9-5 25-5 34 0v8c0 3-2 5-5 5H20c-3 0-5-2-5-5z" class="f"/><circle cx="14" cy="30" r="1.8" class="d"/><circle cx="50" cy="30" r="1.8" class="d"/>',
+  amortiguador:'<circle cx="32" cy="9" r="4" class="s"/><path d="M32 13v14" class="s"/><path d="M24 14l16 3-16 3 16 3-16 3" class="s"/><rect x="26" y="28" width="12" height="23" rx="3" class="f"/><circle cx="32" cy="55" r="4" class="s"/>',
+  bateria:'<rect x="15" y="15" width="8" height="6" rx="1.5" class="s"/><rect x="41" y="15" width="8" height="6" rx="1.5" class="s"/><rect x="9" y="21" width="46" height="30" rx="4" class="f"/><path d="M18 36h7M21.5 32.5v7M39 36h7" class="s"/>'
+};
+// Logotipos inventados: cada proveedor con su forma, su color y sus iniciales.
+var LOGOS = {
+  ocampo:{ini:'AO', col:'#c75a28', forma:'cuadro'},
+  bajio:{ini:'FB', col:'#2c68ad', forma:'circulo'},
+  rivera:{ini:'SR', col:'#6a4db8', forma:'hexagono'},
+  lozano:{ini:'EL', col:'#1d7d55', forma:'cuadro'},
+  galvan:{ini:'RG', col:'#8a6a1c', forma:'circulo'}
+};
+function imgParte(id, cls){
+  return '<span class="pic '+(cls||'')+'" aria-hidden="true"><svg viewBox="0 0 64 64">'+PARTE_SVG[id]+'</svg></span>';
+}
+function logoProv(id, cls){
+  var l=LOGOS[id], forma;
+  if(l.forma==='circulo') forma='<circle cx="32" cy="32" r="30" fill="'+l.col+'"/>';
+  else if(l.forma==='hexagono') forma='<path d="M32 2 58 17v30L32 62 6 47V17z" fill="'+l.col+'"/>';
+  else forma='<rect x="2" y="2" width="60" height="60" rx="14" fill="'+l.col+'"/>';
+  return '<span class="logo '+(cls||'')+'" aria-hidden="true"><svg viewBox="0 0 64 64">'+forma+
+    '<text x="32" y="33" text-anchor="middle" dominant-baseline="central" fill="#fff" font-family="IBM Plex Sans, system-ui, sans-serif" font-weight="600" font-size="22" letter-spacing=".5">'+l.ini+'</text></svg></span>';
+}
+
+var state = {view:'proveedores', sel:{partes:'balatas', proveedores:'ocampo'}, q:'', animate:false};
+
+var $ = function(id){ return document.getElementById(id); };
+function parte(id){ return PARTES.filter(function(p){ return p.id===id; })[0]; }
+function prov(id){ return PROVEEDORES.filter(function(p){ return p.id===id; })[0]; }
+function ofertasDeParte(id){ return OFERTAS.filter(function(o){ return o.parte===id; }); }
+function ofertasDeProv(id){ return OFERTAS.filter(function(o){ return o.prov===id; }); }
+var fmtMXN = new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
+function precio(n){ return fmtMXN.format(n); }
+function dias(n){ return n===1 ? '1 día' : n+' días'; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+var DIACRITICOS = new RegExp('['+String.fromCharCode(0x300)+'-'+String.fromCharCode(0x36f)+']','g');
+function norm(s){ return String(s).toLowerCase().normalize('NFD').replace(DIACRITICOS,''); }
+var CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+var esCelular = window.matchMedia('(max-width:760px)');
+
+// La búsqueda encuentra una parte también por sus proveedores, y al revés.
+function coincide(texto){ return !state.q || norm(texto).indexOf(norm(state.q))>=0; }
+function partesVisibles(){
+  return PARTES.filter(function(p){
+    var provs = ofertasDeParte(p.id).map(function(o){ return prov(o.prov).nombre; }).join(' ');
+    return coincide([p.nombre,p.codigo,p.categoria,p.compat,provs].join(' '));
+  });
+}
+function provVisibles(){
+  return PROVEEDORES.filter(function(v){
+    var partes = ofertasDeProv(v.id).map(function(o){ var p=parte(o.parte); return p.nombre+' '+p.codigo; }).join(' ');
+    return coincide([v.nombre,v.ciudad,v.contacto,partes].join(' '));
+  });
+}
+
+function renderTabs(){
+  $('n-partes').textContent = PARTES.length;
+  $('n-prov').textContent = PROVEEDORES.length;
+  $('tab-partes').setAttribute('aria-selected', state.view==='partes');
+  $('tab-prov').setAttribute('aria-selected', state.view==='proveedores');
+}
+
+function renderList(){
+  var html='';
+  if(state.view==='partes'){
+    var ps=partesVisibles();
+    ps.forEach(function(p){
+      var os=ofertasDeParte(p.id);
+      var min=Math.min.apply(null, os.map(function(o){ return o.precio; }));
+      html+='<li><button class="item" data-id="'+p.id+'" aria-current="'+(state.sel.partes===p.id)+'">'+imgParte(p.id)+
+        '<span class="item-name">'+esc(p.nombre)+'</span>'+
+        '<span class="item-side"><b>desde '+precio(min)+'</b>'+os.length+' proveedores</span>'+
+        '<span class="item-sub"><span class="code">'+p.codigo+'</span> · '+esc(p.categoria)+'</span>'+
+      '</button></li>';
+    });
+    if(!ps.length) html='<li class="empty-list">Ninguna parte coincide con “'+esc(state.q)+'”.</li>';
+  } else {
+    var vs=provVisibles();
+    vs.forEach(function(v){
+      var n=ofertasDeProv(v.id).length;
+      html+='<li><button class="item" data-id="'+v.id+'" aria-current="'+(state.sel.proveedores===v.id)+'">'+logoProv(v.id)+
+        '<span class="item-name">'+esc(v.nombre)+'</span>'+
+        '<span class="item-side">'+n+(n===1?' parte':' partes')+'</span>'+
+        '<span class="item-sub">'+esc(v.ciudad)+'</span>'+
+      '</button></li>';
+    });
+    if(!vs.length) html='<li class="empty-list">Ningún proveedor coincide con “'+esc(state.q)+'”.</li>';
+  }
+  $('list').innerHTML=html;
+}
+
+function kv(lbl,val){ return '<span class="kv"><small>'+lbl+'</small><span>'+val+'</span></span>'; }
+
+function detalleParte(p){
+  var os=ofertasDeParte(p.id);
+  var min=Math.min.apply(null, os.map(function(o){ return o.precio; }));
+  var rapido=Math.min.apply(null, os.map(function(o){ return o.dias; }));
+  var filas=os.slice().sort(function(a,b){ return a.precio-b.precio; }).map(function(o){
+    var v=prov(o.prov);
+    var chips=(o.precio===min?'<span class="chip ok">Mejor precio</span>':'')+
+              (o.dias===rapido?'<span class="chip fast">Entrega más rápida</span>':'');
+    return '<button class="row" data-go="proveedores:'+v.id+'">'+
+      '<span class="who">'+logoProv(v.id,'sm')+'<span class="who-txt"><span class="who-name">'+esc(v.nombre)+'</span>'+
+        '<span class="who-sub">'+esc(o.marca)+' · '+esc(v.ciudad)+'</span>'+
+        (chips?'<span class="chips">'+chips+'</span>':'')+'</span></span>'+
+      kv('Precio', precio(o.precio))+kv('Entrega', dias(o.dias))+kv('Garantía', esc(o.garantia))+CHEV+
+    '</button>';
+  }).join('');
+  return '<button class="back" data-back>‹ Partes</button>'+
+    '<div class="d-top">'+imgParte(p.id,'lg')+'<div class="d-head"><span class="eyebrow">'+esc(p.categoria)+'</span><h2>'+esc(p.nombre)+'</h2>'+
+      '<div class="facts"><span>Código <b class="code">'+p.codigo+'</b></span><span>Unidad <b>'+esc(p.unidad)+'</b></span></div></div></div>'+
+    '<div class="block"><h3>Compatible con</h3><div>'+esc(p.compat)+'</div></div>'+
+    '<div class="block"><h3>Proveedores <span class="n">'+os.length+'</span></h3><div class="rows">'+filas+'</div></div>';
+}
+
+function copiable(lbl,val){
+  return '<div class="c"><small>'+lbl+'</small><div class="c-val"><span>'+esc(val)+'</span>'+
+    '<button class="copy" data-copy="'+esc(val)+'">Copiar</button></div></div>';
+}
+
+function detalleProv(v){
+  var os=ofertasDeProv(v.id);
+  var filas=os.map(function(o){
+    var p=parte(o.parte);
+    return '<button class="row" data-go="partes:'+p.id+'">'+
+      '<span class="who">'+imgParte(p.id,'sm')+'<span class="who-txt"><span class="who-name">'+esc(p.nombre)+'</span>'+
+        '<span class="who-sub"><span class="code">'+p.codigo+'</span> · '+esc(o.marca)+'</span></span></span>'+
+      kv('Precio', precio(o.precio))+kv('Entrega', dias(o.dias))+kv('Garantía', esc(o.garantia))+CHEV+
+    '</button>';
+  }).join('');
+  return '<button class="back" data-back>‹ Proveedores</button>'+
+    '<div class="d-top">'+logoProv(v.id,'lg')+'<div class="d-head"><span class="eyebrow">'+esc(v.ciudad)+'</span><h2>'+esc(v.nombre)+'</h2>'+
+      '<div class="facts"><span>Crédito <b>'+esc(v.credito)+'</b></span></div></div></div>'+
+    '<div class="block"><h3>Contacto</h3><div class="contact">'+
+      '<div class="c"><small>Nombre</small><div class="c-val"><span>'+esc(v.contacto)+'</span></div></div>'+
+      copiable('Teléfono', v.tel)+copiable('Correo', v.correo)+
+      '<div class="c"><small>Ciudad</small><div class="c-val"><span>'+esc(v.ciudad)+'</span></div></div>'+
+    '</div></div>'+
+    '<div class="block"><h3>Partes que vende <span class="n">'+os.length+'</span></h3><div class="rows">'+filas+'</div></div>';
+}
+
+function renderDetail(){
+  var id=state.sel[state.view];
+  var html = state.view==='partes' ? detalleParte(parte(id)) : detalleProv(prov(id));
+  $('detail').innerHTML='<div class="detail-in'+(state.animate?' enter':'')+'">'+html+'</div>';
+}
+
+function render(){ renderTabs(); renderList(); renderDetail(); }
+
+function abrir(view,id){
+  state.view=view; state.sel[view]=id; state.animate=true;
+  $('main').setAttribute('data-show','detail');
+  try{ history.replaceState(null,'','#'+(view==='partes'?'parte-':'prov-')+id); }catch(e){}
+  render();
+  if(esCelular.matches) window.scrollTo(0,0);
+}
+
+$('list').addEventListener('click',function(e){
+  var b=e.target.closest('.item'); if(!b) return;
+  abrir(state.view, b.getAttribute('data-id'));
+});
+$('detail').addEventListener('click',function(e){
+  var copy=e.target.closest('[data-copy]');
+  if(copy){
+    var val=copy.getAttribute('data-copy');
+    var listo=function(){ copy.textContent='Copiado'; setTimeout(function(){ copy.textContent='Copiar'; },1400); };
+    var seleccionar=function(){
+      var s=copy.previousElementSibling, r=document.createRange(); r.selectNodeContents(s);
+      var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    };
+    try{ navigator.clipboard.writeText(val).then(listo, seleccionar); }catch(err){ seleccionar(); }
+    return;
+  }
+  if(e.target.closest('[data-back]')){ $('main').setAttribute('data-show','list'); return; }
+  var go=e.target.closest('[data-go]'); if(!go) return;
+  var par=go.getAttribute('data-go').split(':');
+  abrir(par[0], par[1]);
+});
+[$('tab-partes'),$('tab-prov')].forEach(function(t){
+  t.addEventListener('click',function(){
+    state.view=t.getAttribute('data-view'); state.animate=true;
+    $('main').setAttribute('data-show','list');
+    render();
+  });
+});
+$('q').addEventListener('input',function(){ state.q=this.value.trim(); renderList(); });
+
+// Abre la ficha que traiga el enlace (#parte-balatas, #prov-ocampo).
+(function(){
+  var h=(location.hash||'').slice(1), m=h.match(/^(parte|prov)-([a-z]+)$/);
+  if(m){
+    var view=m[1]==='parte'?'partes':'proveedores';
+    if(view==='partes'?parte(m[2]):prov(m[2])){ state.view=view; state.sel[view]=m[2]; $('main').setAttribute('data-show','detail'); }
+  }
+  render();
+})();
+</script>
