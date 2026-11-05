@@ -302,6 +302,7 @@ function etiqueta(k){ return (D.etiquetas && D.etiquetas[k]) || ETIQUETAS[k] || 
 function vacio(v){ return v===null || v===undefined || v===''; }
 function valor(v){ return typeof v==='number' ? v.toLocaleString('es-MX') : String(v); }
 function dinero(p){
+  if(vacio(p.precio)) return 'Sin precio';
   try{ return new Intl.NumberFormat('es-MX',{style:'currency',currency:p.moneda||'USD',currencyDisplay:'code',maximumFractionDigits:2}).format(p.precio); }
   catch(e){ return p.precio+' '+(p.moneda||''); }
 }
@@ -336,7 +337,11 @@ function visibles(){
       if(String(v)!==state.filtros[k]) return false;
     }
     return !state.q || norm(textoDe(p)).indexOf(norm(state.q))>=0;
-  }).sort(function(a,b){ return a.precio-b.precio; });
+  }).sort(function(a,b){
+    // Los que no tienen precio van al final.
+    var x=vacio(a.precio), y=vacio(b.precio);
+    return x!==y ? (x?1:-1) : (x ? 0 : a.precio-b.precio);
+  });
 }
 // Resumen corto de un producto: lo que más sirve para distinguirlo de los demás de su tipo.
 function resumen(p){
@@ -427,7 +432,8 @@ function comparacion(){
   var campos=[];
   ps.forEach(function(p){ camposDe(p.categoria).concat(Object.keys(p.atributos||{})).forEach(function(k){ if(campos.indexOf(k)<0) campos.push(k); }); });
   campos=campos.filter(function(k){ return ps.some(function(p){ return !vacio((p.atributos||{})[k]); }); });
-  var min=Math.min.apply(null, ps.map(function(p){ return p.precio; }));
+  var conPrecio=ps.filter(function(p){ return !vacio(p.precio); });
+  var min=Math.min.apply(null, conPrecio.map(function(p){ return p.precio; }));
   var monedas=ps.map(function(p){ return p.moneda; }).filter(function(m,i,a){ return a.indexOf(m)===i; });
   function fila(lbl,vals,num){
     var dif=vals.map(function(v){ return vacio(v)?'':String(v); }).filter(function(v,i,a){ return a.indexOf(v)===i; }).length>1;
@@ -443,7 +449,7 @@ function comparacion(){
         '<button class="x" data-pick="'+esc(p.id)+'">Quitar</button></th>';
     }).join('')+'</tr></thead><tbody>'+
       '<tr class="diff"><th>Precio</th>'+ps.map(function(p){
-        return '<td class="num'+(p.precio===min && monedas.length===1 && ps.length>1?' best':'')+'">'+esc(dinero(p))+'</td>';
+        return '<td class="num'+(p.precio===min && monedas.length===1 && conPrecio.length>1?' best':'')+'">'+esc(dinero(p))+'</td>';
       }).join('')+'</tr>'+
       fila('Incoterm', ps.map(function(p){ return p.incoterm; }))+
       fila('Tipo', ps.map(function(p){ return p.categoria; }))+
