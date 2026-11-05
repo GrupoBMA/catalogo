@@ -28,6 +28,8 @@ Las categorías y los atributos que se comparan en cada una están en `CATEGORIA
 - **Celular** (≤820 px): lista o ficha, una a la vez, con botón para regresar.
 - **Probar:** `.claude/launch.json` levanta `python -m http.server 8766`. Ya no hay datos de ejemplo: para probar hay que entrar con la cuenta.
 
+**Catálogo propio (páginas):** además de los proveedores, están los productos de sunldemexico.com (proveedor "SUNL de México (página web)") y alzator.com.mx ("ALZATOR (página web)"), **sin precio** a propósito: el usuario los carga después. Moneda MXN, incoterm "Precio en México". Los precios de las páginas no se capturan. La copia limpia de SUNL vive en `Catalogos/paginas/` (fuera del repo).
+
 La captura de catálogos se hace en local: `build_catalogo.py` genera `datos/productos.json` y `Catalogo comparativo.xlsx`. El avance (qué catálogos faltan) está en `AVANCE.md`, también local.
 
 ## Regla estricta: nada con precios en el repo
