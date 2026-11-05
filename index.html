@@ -176,6 +176,24 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
 .bar .go{background:var(--accent);color:var(--surface)}
 .bar .no{color:var(--bg);opacity:.75}
 
+/* Inicio de sesión */
+.login{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px 16px}
+.login[hidden],.app[hidden]{display:none}
+.login form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);padding:28px 24px}
+.login h1{font-size:1.35rem}
+.login p{margin:0;color:var(--muted);font-size:.9rem}
+.login label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.login input{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;outline:none}
+.login input:focus{border-color:var(--accent)}
+.login button{text-align:center;font-weight:600;background:var(--accent);color:var(--surface);border-radius:8px;padding:10px}
+.login button:disabled{opacity:.6;cursor:default}
+.login .err{color:var(--warn);background:var(--warn-soft);border-radius:8px;padding:8px 12px}
+.login .err:empty{display:none}
+.tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.lnk{font-size:.8rem;font-weight:500;color:var(--accent)}
+.lnk[hidden]{display:none}
+
 @media (max-width:820px){
   .main{grid-template-columns:minmax(0,1fr)}
   .main[data-show="list"] .detail{display:none}
@@ -191,11 +209,26 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
 </style>
 </head>
 <body>
-<div class="app">
+<div class="login" id="login" hidden>
+  <form id="login-form" autocomplete="on">
+    <h1>Catálogo de proveedores</h1>
+    <p>Entra con tu usuario para ver los precios.</p>
+    <label>Usuario<input id="l-user" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+    <label>Contraseña<input id="l-pass" name="password" type="password" autocomplete="current-password" required></label>
+    <p class="err" id="l-err" role="alert"></p>
+    <button id="l-go" type="submit">Entrar</button>
+  </form>
+</div>
+
+<div class="app" id="app" hidden>
   <header class="top">
     <div class="brand">
       <h1>Catálogo de proveedores</h1>
-      <span class="tag" id="origen">Datos de ejemplo</span>
+      <div class="tags">
+        <span class="tag" id="origen">Cargando…</span>
+        <button class="lnk" id="subir" hidden>Subir datos de esta computadora</button>
+        <button class="lnk" id="salir">Salir</button>
+      </div>
     </div>
     <label class="search" for="q">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -219,65 +252,16 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
   <button class="no" id="bar-no">Quitar</button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
-// Datos de EJEMPLO (inventados) para la página publicada. Los reales viven en datos/productos.json,
-// que no se sube al repo porque trae precios; si existe (en la computadora), se usa ese.
-var EJEMPLO = {
-  categorias: {
-    SUNL: {
-      'Motocarros y mototaxis': {
-        'Motocarro': ['combustible','cilindrada_cc','cabina','tipo_caja','rodado','ejes','carga_kg','caja_mm','potencia_kw','vel_max_kmh','llantas','peso_kg'],
-        'Mototaxi': ['combustible','cilindrada_cc','cabina','pasajeros','potencia_kw','vel_max_kmh','llantas','peso_kg']
-      },
-      'Recreativos': {
-        'ATV / Cuatrimoto': ['combustible','cilindrada_cc','transmision','tamano'],
-        'UTV / Raizer': ['combustible','cilindrada_cc','plazas','traccion']
-      }
-    },
-    ALZATOR: {
-      'Industrial y logística': {
-        'Montacargas': ['combustible','carga_kg','altura_elev_mm','motor','llantas']
-      },
-      'Construcción': {
-        'Miniexcavadora': ['peso_operativo_t','combustible','motor','potencia_kw','emisiones','cabina','hidraulica'],
-        'Excavadora': ['peso_operativo_t','combustible','motor','potencia_kw','emisiones','cabina','hidraulica']
-      }
-    }
-  },
-  etiquetas: {},
-  productos: [
-    {id:'ej-1', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Motocarro', proveedor:'Fábrica Ejemplo A', modelo:'MC-150', nombre:'Motocarro 150cc', precio:820, moneda:'USD', incoterm:'FOB',
-     atributos:{combustible:'Gasolina', cilindrada_cc:150, cabina:'Sin cabina', tipo_caja:'Pickup / redilas', rodado:'Sencillo', ejes:1, carga_kg:1000, caja_mm:'1600×1100', vel_max_kmh:60, llantas:'4.00-12', peso_kg:370}},
-    {id:'ej-2', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Motocarro', proveedor:'Fábrica Ejemplo B', modelo:'T200W', nombre:'Motocarro 200cc con parabrisas', precio:1050, moneda:'USD', incoterm:'FOB',
-     atributos:{combustible:'Gasolina', cilindrada_cc:200, cabina:'Parabrisas', tipo_caja:'Pickup / redilas', rodado:'Sencillo', ejes:1, carga_kg:1000, caja_mm:'1700×1250', vel_max_kmh:65, llantas:'4.50-12', peso_kg:380}},
-    {id:'ej-3', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Motocarro', proveedor:'Fábrica Ejemplo A', modelo:'MC-300R', nombre:'Motocarro 300cc doble rodado', precio:1490, moneda:'USD', incoterm:'FOB',
-     atributos:{combustible:'Gasolina', cilindrada_cc:300, cabina:'Techo (semicabina)', tipo_caja:'Pickup / redilas', rodado:'Doble', ejes:1, carga_kg:2000, caja_mm:'2200×1400', potencia_kw:12.5, vel_max_kmh:70, llantas:'5.00-12', peso_kg:560}},
-    {id:'ej-4', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Motocarro', proveedor:'Fábrica Ejemplo C', modelo:'K300 Box', nombre:'Motocarro 300cc cabina cerrada caja seca', precio:2650, moneda:'USD', incoterm:'FOB',
-     atributos:{combustible:'Gasolina', cilindrada_cc:300, cabina:'Cabina cerrada', tipo_caja:'Caja seca', rodado:'Doble', ejes:1, carga_kg:2000, caja_mm:'2200×1400', vel_max_kmh:65, llantas:'5.00-12', peso_kg:880}},
-    {id:'ej-5', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Motocarro', proveedor:'Fábrica Ejemplo B', modelo:'T300D', nombre:'Motocarro 300cc volteo', precio:1920, moneda:'USD', incoterm:'FOB',
-     atributos:{combustible:'Gasolina', cilindrada_cc:300, cabina:'Techo (semicabina)', tipo_caja:'Volteo', rodado:'Doble', ejes:1, carga_kg:2000, caja_mm:'2200×1400', vel_max_kmh:65, llantas:'5.00-12', peso_kg:700}},
-    {id:'ej-6', linea:'SUNL', familia:'Motocarros y mototaxis', categoria:'Mototaxi', proveedor:'Fábrica Ejemplo C', modelo:'P250', nombre:'Mototaxi 250cc', precio:1380, moneda:'USD', incoterm:'FOB',
-     atributos:{combustible:'Gasolina', cilindrada_cc:250, cabina:'Techo con toldo', pasajeros:6, potencia_kw:10, vel_max_kmh:70, llantas:'5.00-12', peso_kg:450}},
-    {id:'ej-7', linea:'SUNL', familia:'Recreativos', categoria:'ATV / Cuatrimoto', proveedor:'Fábrica Ejemplo D', modelo:'Q125', nombre:'Cuatrimoto 125cc juvenil', precio:640, moneda:'USD', incoterm:'FOB',
-     atributos:{combustible:'Gasolina', cilindrada_cc:125, transmision:'Automática', tamano:'Juvenil'}},
-    {id:'ej-8', linea:'SUNL', familia:'Recreativos', categoria:'ATV / Cuatrimoto', proveedor:'Fábrica Ejemplo D', modelo:'Q200', nombre:'Cuatrimoto 200cc', precio:910, moneda:'USD', incoterm:'FOB',
-     atributos:{combustible:'Gasolina', cilindrada_cc:200, transmision:'Semiautomática', tamano:'Adulto'}},
-    {id:'ej-9', linea:'SUNL', familia:'Recreativos', categoria:'UTV / Raizer', proveedor:'Fábrica Ejemplo E', modelo:'U400', nombre:'UTV 400cc 2 plazas', precio:3400, moneda:'USD', incoterm:'FOB',
-     atributos:{combustible:'Gasolina', cilindrada_cc:400, plazas:2, traccion:'4x2'}},
-    {id:'ej-10', linea:'ALZATOR', familia:'Industrial y logística', categoria:'Montacargas', proveedor:'Fábrica Ejemplo F', modelo:'FD30', nombre:'Montacargas diésel 3 t', precio:9800, moneda:'USD', incoterm:'FOB',
-     atributos:{combustible:'Diésel', carga_kg:3000, altura_elev_mm:3000, motor:'Motor de ejemplo', llantas:'Neumáticas'}},
-    {id:'ej-11', linea:'ALZATOR', familia:'Industrial y logística', categoria:'Montacargas', proveedor:'Fábrica Ejemplo G', modelo:'EV20', nombre:'Montacargas eléctrico 2 t', precio:8700, moneda:'USD', incoterm:'FOB',
-     atributos:{combustible:'Eléctrico', carga_kg:2000, altura_elev_mm:3000, llantas:'Macizas'}},
-    {id:'ej-12', linea:'ALZATOR', familia:'Construcción', categoria:'Miniexcavadora', proveedor:'Fábrica Ejemplo H', modelo:'X18', nombre:'Miniexcavadora 1.8 t', precio:9200, moneda:'USD', incoterm:'FOB',
-     atributos:{peso_operativo_t:1.8, combustible:'Diésel', motor:'Motor de ejemplo', potencia_kw:11, emisiones:'Euro V', cabina:'Abierta (techo)'}},
-    {id:'ej-13', linea:'ALZATOR', familia:'Construcción', categoria:'Miniexcavadora', proveedor:'Fábrica Ejemplo F', modelo:'ME35', nombre:'Miniexcavadora 3.5 t', precio:15600, moneda:'USD', incoterm:'FOB',
-     atributos:{peso_operativo_t:3.5, combustible:'Diésel', motor:'Motor de ejemplo', potencia_kw:18, emisiones:'Stage V', cabina:'Cerrada'}},
-    {id:'ej-14', linea:'ALZATOR', familia:'Construcción', categoria:'Excavadora', proveedor:'Fábrica Ejemplo H', modelo:'X80', nombre:'Excavadora 8 t', precio:31000, moneda:'USD', incoterm:'FOB',
-     atributos:{peso_operativo_t:8, combustible:'Diésel', motor:'Motor de ejemplo', potencia_kw:54, emisiones:'Stage III', cabina:'Cerrada'}},
-    {id:'ej-15', linea:'ALZATOR', familia:'Construcción', categoria:'Excavadora', proveedor:'Fábrica Ejemplo G', modelo:'E130', nombre:'Excavadora 13 t', precio:48500, moneda:'USD', incoterm:'FOB',
-     atributos:{peso_operativo_t:13, combustible:'Diésel', motor:'Motor de ejemplo', potencia_kw:86, emisiones:'Stage III', cabina:'Cerrada'}}
-  ]
-};
+// Los datos viven en Supabase (esquema catalogo, sin acceso directo desde la API). Solo se leen con
+// public.catalogo_datos(), que exige una sesión de una cuenta dada de alta en catalogo.usuarios.
+// La llave de abajo es la pública (publishable): sin sesión no da acceso a nada.
+var SUPABASE_URL = 'https://jlfendrdwptwmttrahre.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_RNnR7jV42dGEGLFWdRVfvQ_cP1xSwuO';
+// El usuario se escribe sin correo: por dentro se convierte en usuario@catalogo.bma.
+var DOMINIO = '@catalogo.bma';
+var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true, autoRefreshToken:true}});
 
 // Nombres para mostrar de cada característica (los datos reales traen los suyos).
 var ETIQUETAS = {
@@ -291,7 +275,7 @@ var ETIQUETAS = {
 var FILTRABLES = ['tipo','tipo_plataforma','chasis','tipo_rodado','manejo','accionamiento','cabina','tipo_caja','cilindrada_cc','combustible','rodado','ejes','pasajeros','transmision','tamano','plazas',
   'traccion','peso_operativo_t','emisiones','carga_kg','llantas'];
 
-var D = EJEMPLO, esLocal = false;
+var D = {categorias:{}, etiquetas:{}, productos:[]};
 var state = {linea:'SUNL', cat:null, filtros:{}, q:'', sel:null, comp:[], vista:'ficha', animate:false};
 
 var $ = function(id){ return document.getElementById(id); };
@@ -515,14 +499,72 @@ $('bar-go').addEventListener('click',function(){ if(state.comp.length<2) return;
 $('bar-no').addEventListener('click',function(){ state.comp=[]; if(state.vista==='comparar') state.vista='ficha'; renderList(); renderDetail(); renderBar(); });
 $('q').addEventListener('input',function(){ state.q=this.value.trim(); renderList(); });
 
-// Si hay datos reales en la computadora (datos/productos.json), se usan; si no, los de ejemplo.
-function arrancar(){ elegirLinea(Object.keys(D.categorias)[0]); render(); }
-fetch('datos/productos.json',{cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){
-  if(!j || !j.productos || !j.productos.length) throw 0;
-  D=j; esLocal=true;
-  $('origen').textContent='Datos reales · solo en esta computadora';
-  $('origen').className='tag local';
-}).catch(function(){}).then(arrancar);
+// ---- Sesión y datos ----
+var arrancado=false;
+function arrancar(){
+  if(!arrancado){ elegirLinea(Object.keys(D.categorias)[0]); arrancado=true; }
+  else if(!D.categorias[state.linea]) elegirLinea(Object.keys(D.categorias)[0]);
+  render();
+}
+function verLogin(msg){
+  $('app').hidden=true; $('login').hidden=false;
+  $('l-err').textContent=msg||''; $('l-go').disabled=false; $('l-go').textContent='Entrar';
+}
+function cargar(){
+  $('origen').textContent='Cargando…'; $('origen').className='tag';
+  return sb.rpc('catalogo_datos').then(function(r){
+    if(r.error){
+      if(r.error.code==='42501'){ sb.auth.signOut(); verLogin('Esta cuenta no tiene acceso al catálogo.'); return; }
+      throw r.error;
+    }
+    D=r.data; if(!D.categorias) D.categorias={}; if(!D.productos) D.productos=[];
+    $('login').hidden=true; $('app').hidden=false;
+    $('origen').textContent=D.productos.length ? D.productos.length.toLocaleString('es-MX')+' productos' : 'Sin datos todavía';
+    arrancar(); revisarLocal();
+  }).catch(function(e){ verLogin('No se pudieron cargar los datos: '+(e.message||e)); });
+}
+$('login-form').addEventListener('submit',function(e){
+  e.preventDefault();
+  var u=$('l-user').value.trim().toLowerCase();
+  if(u.indexOf('@')<0) u+=DOMINIO;
+  $('l-go').disabled=true; $('l-go').textContent='Entrando…'; $('l-err').textContent='';
+  sb.auth.signInWithPassword({email:u, password:$('l-pass').value}).then(function(r){
+    if(r.error){ verLogin(r.error.status===400 ? 'Usuario o contraseña incorrectos.' : r.error.message); return; }
+    $('l-pass').value=''; cargar();
+  });
+});
+$('salir').addEventListener('click',function(){
+  sb.auth.signOut().then(function(){ D={categorias:{},etiquetas:{},productos:[]}; arrancado=false; state.comp=[]; verLogin(); });
+});
+
+// Solo en la computadora (localhost): si existe datos/productos.json (lo genera build_catalogo.py),
+// aparece el botón para reemplazar con él lo que hay en Supabase.
+var esLocal=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+function revisarLocal(){
+  if(!esLocal) return;
+  fetch('datos/productos.json',{cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){
+    if(!j || !j.productos || !j.productos.length) return;
+    // Confirmación en dos clics (sin confirm(), que algunos navegadores bloquean).
+    var b=$('subir'), listo=false, texto='Subir datos de esta computadora';
+    b.hidden=false; b.textContent=texto;
+    b.onclick=function(){
+      if(!listo){
+        listo=true;
+        b.textContent='¿Reemplazar los '+D.productos.length+' de Supabase por los '+j.productos.length+' de esta computadora? Clic otra vez para confirmar';
+        setTimeout(function(){ if(listo && !b.disabled){ listo=false; b.textContent=texto; } }, 8000);
+        return;
+      }
+      listo=false; b.disabled=true; b.textContent='Subiendo…';
+      sb.rpc('catalogo_subir',{datos:j}).then(function(r){
+        b.disabled=false; b.textContent=texto;
+        if(r.error){ $('origen').textContent='No se subieron: '+r.error.message; $('origen').className='tag local'; return; }
+        cargar().then(function(){ $('origen').textContent='Listo: '+r.data.productos.toLocaleString('es-MX')+' productos subidos a Supabase'; });
+      });
+    };
+  }).catch(function(){});
+}
+
+sb.auth.getSession().then(function(r){ if(r.data && r.data.session) cargar(); else verLogin(); });
 </script>
 </body>
 </html>
