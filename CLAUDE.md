@@ -19,9 +19,11 @@ Las categorías y los atributos que se comparan en cada una están en `CATEGORIA
 
 - **Datos:** viven en Supabase (ver "Datos y seguridad"). Al abrir pide usuario y contraseña; sin sesión no se ve nada. La página publicada y la local son iguales: las dos leen de Supabase.
 - **Subir datos:** solo en la computadora (localhost). Si existe `datos/productos.json`, junto a "Salir" aparece "Subir datos de esta computadora", que **reemplaza todo** el catálogo de Supabase por ese archivo (función `catalogo_subir`). Flujo: `python build_catalogo.py`, abrir la app local, entrar y subir.
-- **Formato del JSON:** `{categorias: {LINEA: {Familia: {Categoría: [campos a comparar]}}}, etiquetas: {campo: "Nombre"}, productos: [...]}`. Cada producto: `id, linea, familia, categoria, proveedor, modelo, nombre, precio, moneda, incoterm, fecha, atributos{}`, y opcionales `medidas_mm, empaque, piezas_40hq, notas, archivo`.
+- **Formato del JSON:** `{categorias: {LINEA: {Familia: {Categoría: [campos a comparar]}}}, etiquetas: {campo: "Nombre"}, productos: [...]}`. Cada producto: `id, linea, familia, categoria, proveedor, modelo, nombre, precio, moneda, incoterm, fecha, atributos{}`, y opcionales `medidas_mm, empaque, piezas_40hq, notas, archivo, fecha_precio, archivo_precio`.
 - **Navegación:** línea (SUNL / ALZATOR) → tipo (botones agrupados por familia, solo los que tienen productos) → filtros por característica (selects, solo los de `FILTRABLES` con 2 o más valores, más Proveedor). La lista va de menor a mayor precio. El **buscador es general**: con texto busca en todo el catálogo (las dos líneas y todos los tipos, sin filtros) en nombre, modelo, proveedor, tipo, familia, línea y características; cada palabra debe aparecer y acepta plurales ("atv's" → ATV). Los resultados se ordenan por línea, tipo y precio, y muestran su tipo arriba. "Borrar búsqueda" o escoger un tipo regresa a la navegación normal.
 - **Favoritos:** cada producto tiene una estrella (en la lista y en la ficha) para ponerlo o quitarlo de favoritos. Junto a SUNL y ALZATOR está la pestaña "★ Favoritos", con todos los favoritos de las dos líneas, filtros de Tipo y Proveedor, y el buscador busca solo dentro de ellos. Se guardan en Supabase (`catalogo.favoritos`, función `catalogo_favorito`) y sobreviven a "Subir datos" porque van por id de producto, sin llave foránea.
+- **Fecha del precio:** cada producto con precio lleva `fecha_precio`. Se muestra "al dd/mm/aaaa" en la lista, "Precio al …" en la ficha y una fila en Comparar. Los precios de los catálogos originales van al 01/11/2026.
+- **Precios nuevos:** las cotizaciones que llegan después se guardan en `Cotizacion Precios/` (fuera del repo) y se capturan en `PRECIOS_ACTUALIZADOS` de `build_catalogo.py` (precio, moneda, incoterm, fecha de la cotización y archivo). Luego `python build_catalogo.py` y "Subir datos". Primera: Nuoman 6-nov-2026 (6 montacargas eléctricos, EXW).
 - **Sin precio:** un producto puede venir con `precio: null` (folletos); se muestra "Sin precio", va al final de la lista y no cuenta para el mejor precio al comparar.
 - **Ficha:** precio, incoterm, piezas por 40HQ, todas las características (las que faltan dicen "No indicado"), notas de captura y archivo fuente.
 - **Comparar:** casilla en cada producto (también se pueden mezclar tipos); la barra de abajo abre la tabla a todo lo ancho. Mejor precio en verde (solo si todos están en la misma moneda); lo que es igual en todos sale en gris.
@@ -34,7 +36,7 @@ La captura de catálogos se hace en local: `build_catalogo.py` genera `datos/pro
 
 ## Regla estricta: nada con precios en el repo
 
-El repo es **público** (GitHub Pages en el plan gratis). Los catálogos de proveedores, los precios y los datos capturados **nunca** se suben: `Catalogos/`, `datos/`, `build_catalogo.py`, los Excel y `AVANCE.md` están en `.gitignore`. Revisar `git status` antes de cada commit.
+El repo es **público** (GitHub Pages en el plan gratis). Los catálogos de proveedores, los precios y los datos capturados **nunca** se suben: `Catalogos/`, `Cotizacion Precios/`, `Comparativos/`, `datos/`, `build_catalogo.py`, los Excel y `AVANCE.md` están en `.gitignore`. Revisar `git status` antes de cada commit.
 
 ## Repositorio y despliegue
 
@@ -44,7 +46,7 @@ El repo es **público** (GitHub Pages en el plan gratis). Los catálogos de prov
 
 ## Datos y seguridad (desde el 5-nov-2026)
 
-- **Supabase:** mismo proyecto que GVF y administración (`jlfendrdwptwmttrahre`). Esquema propio `catalogo` con `productos`, `config` (categorías y etiquetas) y `usuarios` (lista de cuentas con acceso). El esquema **no** está expuesto en la API y sus tablas tienen RLS sin reglas: nadie las lee directo.
+- **Supabase:** mismo proyecto que GVF y administración (`jlfendrdwptwmttrahre`). Esquema propio `catalogo` con `productos` (con `fecha_precio` y `archivo_precio`), `config` (categorías y etiquetas) y `usuarios` (lista de cuentas con acceso). El esquema **no** está expuesto en la API y sus tablas tienen RLS sin reglas: nadie las lee directo.
 - **Única puerta:** `public.catalogo_datos()` (leer todo, con los favoritos), `public.catalogo_subir(datos)` (reemplazar todo) y `public.catalogo_favorito(producto, poner)`. Las dos son `security definer` y primero revisan que la sesión esté en `catalogo.usuarios`; `anon` no puede llamarlas.
 - **Cuentas:** solo una, la del usuario. Se crea en el panel de Supabase (Authentication → Users → Add user, con "Auto Confirm"), con correo `usuario@catalogo.bma`; en la app se escribe solo `usuario`. Después se agrega su id a `catalogo.usuarios`. Si olvida la contraseña, se cambia desde el panel.
 - **GVF:** al hacer esto se encontró que las 26 tablas de GVF dejaban entrar a cualquier cuenta con sesión. Ahora sus reglas (`solo_gvf_*`) solo dejan pasar a las cuentas de `acceso.gvf_usuarios` (hoy, la de GVF). Una cuenta nueva de GVF hay que agregarla ahí.

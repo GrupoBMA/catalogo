@@ -93,6 +93,8 @@ h1{margin:0;font-size:1.6rem;font-weight:600;letter-spacing:-.015em;line-height:
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a929b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 8px center;background-size:14px}
 .f select.on{border-color:var(--accent);color:var(--accent)}
+.fp{display:block;font-size:.72rem;color:var(--faint)}
+.price .fp-tag{font-size:.78rem;font-weight:500;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:2px 9px}
 .res{font-size:.88rem;color:var(--muted);padding:7px 0}
 .item-cat{display:block;font-size:.74rem;font-weight:500;letter-spacing:.03em;color:var(--accent)}
 .clear{font-size:.84rem;font-weight:500;color:var(--accent);padding:7px 4px}
@@ -303,6 +305,12 @@ function dinero(p){
   try{ return new Intl.NumberFormat('es-MX',{style:'currency',currency:p.moneda||'USD',currencyDisplay:'code',maximumFractionDigits:2}).format(p.precio); }
   catch(e){ return p.precio+' '+(p.moneda||''); }
 }
+// Fecha del precio: '2026-11-06' -> '06/11/2026'. Viene de catalogo.productos.fecha_precio.
+function fechaPrecio(p){
+  if(!p.fecha_precio) return '';
+  var f=String(p.fecha_precio).slice(0,10).split('-');
+  return f.length===3 ? f[2]+'/'+f[1]+'/'+f[0] : String(p.fecha_precio);
+}
 function producto(id){ return D.productos.filter(function(p){ return p.id===id; })[0]; }
 var esCelular = window.matchMedia('(max-width:820px)');
 
@@ -436,7 +444,8 @@ function renderList(){
     html+='<li class="'+(state.sel===p.id && state.vista==='ficha'?'cur':'')+'">'+
       '<button class="item" data-id="'+esc(p.id)+'">'+
         '<span class="item-name">'+esc(p.nombre)+'</span>'+
-        '<span class="item-side"><b>'+esc(dinero(p))+'</b>'+esc(p.incoterm||'')+'</span>'+
+        '<span class="item-side"><b>'+esc(dinero(p))+'</b>'+esc(p.incoterm||'')+
+          (fechaPrecio(p)?'<small class="fp">al '+esc(fechaPrecio(p))+'</small>':'')+'</span>'+
         '<span class="item-sub">'+(mixta()?'<span class="item-cat">'+esc(p.linea)+' · '+esc(p.categoria)+'</span>':'')+esc(p.proveedor)+(resumen(p)?' · '+esc(resumen(p)):'')+'</span>'+
       '</button>'+
       '<button class="star" data-fav-id="'+esc(p.id)+'" aria-pressed="'+!!FAV[p.id]+'" aria-label="'+(FAV[p.id]?'Quitar de favoritos':'Agregar a favoritos')+'" title="'+(FAV[p.id]?'Quitar de favoritos':'Agregar a favoritos')+'">'+(FAV[p.id]?'★':'☆')+'</button>'+
@@ -460,6 +469,7 @@ function ficha(p){
       '<div class="facts"><span>Proveedor <b>'+esc(p.proveedor)+'</b></span><span>Modelo <b class="code">'+esc(p.modelo||'')+'</b></span>'+
       (p.fecha?'<span>Cotización <b>'+esc(p.fecha)+'</b></span>':'')+'</div></div>'+
     '<div class="price"><b>'+esc(dinero(p))+'</b><span>'+esc(p.incoterm||'')+'</span>'+
+      (fechaPrecio(p)?'<span class="fp-tag">Precio al '+esc(fechaPrecio(p))+'</span>':'')+
       (p.piezas_40hq?'<span>'+p.piezas_40hq+' piezas por contenedor 40HQ</span>':'')+'</div>'+
     '<div class="btns"><button class="btn'+(enComp?' on':'')+'" data-pick="'+esc(p.id)+'">'+(enComp?'En comparación ✓':'Agregar a comparar')+'</button>'+
       '<button class="btn'+(FAV[p.id]?' on':'')+'" data-fav-id="'+esc(p.id)+'">'+(FAV[p.id]?'★ En favoritos':'☆ Agregar a favoritos')+'</button></div>'+
@@ -496,6 +506,7 @@ function comparacion(){
         return '<td class="num'+(p.precio===min && monedas.length===1 && conPrecio.length>1?' best':'')+'">'+esc(dinero(p))+'</td>';
       }).join('')+'</tr>'+
       fila('Incoterm', ps.map(function(p){ return p.incoterm; }))+
+      fila('Precio al', ps.map(function(p){ return fechaPrecio(p); }))+
       fila('Tipo', ps.map(function(p){ return p.categoria; }))+
       campos.map(function(k){ return fila(etiqueta(k), ps.map(function(p){ return (p.atributos||{})[k]; }), ps.some(function(p){ return typeof (p.atributos||{})[k]==='number'; })); }).join('')+
       fila('Medidas (mm)', ps.map(function(p){ return p.medidas_mm; }))+
