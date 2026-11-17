@@ -72,8 +72,28 @@ h1{margin:0;font-size:1.6rem;font-weight:600;letter-spacing:-.015em;line-height:
 .seg button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .n{font-family:var(--mono);font-size:.78rem;font-weight:400;color:var(--faint);font-variant-numeric:tabular-nums}
 
-/* Tipos de producto (agrupados por familia) */
-.cats{display:flex;flex-wrap:wrap;gap:6px 20px;align-items:flex-start}
+/* Encabezado: título con el contador a la derecha; Salir arriba del buscador */
+.title-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.title-row .tag{align-self:center}
+.tags:not(:has(.lnk:not([hidden]))){display:none}
+.top-der{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:1 1 260px;max-width:360px}
+.top-der .search{width:100%;max-width:none;flex:none}
+
+/* Tipos de producto: pestañas de familia y, debajo, solo los tipos de esa familia */
+.cats{display:flex;flex-direction:column;gap:12px}
+.cats:empty{display:none}
+.fams{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.fams::-webkit-scrollbar{display:none}
+.fams button{padding:8px 12px 9px;font-weight:500;font-size:.92rem;color:var(--muted);white-space:nowrap;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .12s ease,border-color .12s ease}
+.fams button:hover{color:var(--fg)}
+.fams button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.tipos{display:flex;flex-wrap:wrap;gap:6px}
+.tipo{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);
+  font-size:.88rem;color:var(--muted);transition:background-color .12s ease,border-color .12s ease,color .12s ease}
+.tipo:hover{color:var(--fg);border-color:var(--faint)}
+.tipo[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:500}
+.tipo[aria-pressed="true"] .n{color:var(--accent);opacity:.8}
 .fam{display:flex;flex-direction:column;gap:6px;min-width:0}
 .fam small{font-size:.72rem;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
 .fam-row{display:flex;flex-wrap:wrap;gap:6px}
@@ -307,6 +327,10 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
 @media (max-width:820px){
   .main{grid-template-columns:minmax(0,1fr)}
   .menu{grid-template-columns:minmax(0,1fr)}
+  .top-der{max-width:none;flex-basis:100%}
+  .tipos{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-right:-16px;padding-right:16px}
+  .tipos::-webkit-scrollbar{display:none}
+  .tipo{white-space:nowrap}
   .opc{padding:18px}
   /* En celular la tarjeta ocupa toda la pantalla */
   html.mazo-on,html.mazo-on body{overflow:hidden}
@@ -359,18 +383,19 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
 <div class="app" id="app" hidden>
   <header class="top">
     <div class="brand">
-      <h1>Catálogo de proveedores</h1>
+      <div class="title-row"><h1>Catálogo de proveedores</h1><span class="tag" id="origen">Cargando…</span></div>
       <div class="tags">
-        <span class="tag" id="origen">Cargando…</span>
-        <button class="lnk" id="subir" hidden>Subir datos de esta computadora</button>
         <button class="lnk" id="ir-menu" hidden>‹ Menú</button>
-        <button class="lnk" id="salir">Salir</button>
+        <button class="lnk" id="subir" hidden>Subir datos de esta computadora</button>
       </div>
     </div>
-    <label class="search" for="q">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="Buscar modelo, proveedor o característica" autocomplete="off" aria-label="Buscar">
-    </label>
+    <div class="top-der">
+      <button class="lnk" id="salir">Salir</button>
+      <label class="search" for="q">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Buscar modelo, proveedor o característica" autocomplete="off" aria-label="Buscar">
+      </label>
+    </div>
   </header>
 
   <nav class="menu" id="menu" aria-label="Menú"></nav>
@@ -659,11 +684,15 @@ function renderCats(){
     return;
   }
   if(state.fav || state.pag){ $('cats').innerHTML=''; return; }
-  $('cats').innerHTML=familias().map(function(f){
-    return '<div class="fam"><small>'+esc(f.fam)+'</small><div class="fam-row">'+f.tipos.map(function(t){
-      return '<button class="cat" data-cat="'+esc(t.cat)+'" aria-pressed="'+(!mixta() && state.cat===t.cat)+'">'+esc(t.cat)+' <span class="n">'+t.n+'</span></button>';
-    }).join('')+'</div></div>';
-  }).join('');
+  // Una fila de pestañas con las familias y, debajo, solo los tipos de la familia elegida.
+  var fs=familias(), actual=fs.filter(function(f){ return f.tipos.some(function(t){ return t.cat===state.cat; }); })[0] || fs[0];
+  if(!actual){ $('cats').innerHTML=''; return; }
+  $('cats').innerHTML='<div class="fams" role="tablist" aria-label="Familia">'+fs.map(function(f){
+      return '<button role="tab" data-fam="'+esc(f.fam)+'" aria-selected="'+(f===actual)+'">'+esc(f.fam)+'</button>';
+    }).join('')+'</div>'+
+    '<div class="tipos">'+actual.tipos.map(function(t){
+      return '<button class="tipo" data-cat="'+esc(t.cat)+'" aria-pressed="'+(!mixta() && state.cat===t.cat)+'">'+esc(t.cat)+' <span class="n">'+t.n+'</span></button>';
+    }).join('')+'</div>';
 }
 function selectFiltro(k, lbl, base){
   var vals={};
@@ -1128,6 +1157,12 @@ $('lineas').addEventListener('click',function(e){
 $('cats').addEventListener('click',function(e){
   var rs=e.target.closest('[data-rsub]');
   if(rs){ verRevisar(rs.getAttribute('data-rsub')); state.animate=true; $('main').setAttribute('data-show', rs.getAttribute('data-rsub')==='pendientes'?'detail':'list'); render(); return; }
+  var fm=e.target.closest('[data-fam]');
+  if(fm){
+    var f=familias().filter(function(x){ return x.fam===fm.getAttribute('data-fam'); })[0];
+    if(f){ elegirCategoria(f.tipos[0].cat); state.animate=true; $('main').setAttribute('data-show','list'); render(); }
+    return;
+  }
   var b=e.target.closest('[data-cat]'); if(!b) return; elegirCategoria(b.getAttribute('data-cat')); state.animate=true; $('main').setAttribute('data-show','list'); render(); });
 $('filters').addEventListener('change',function(e){
   var cq=e.target.closest('[data-cmpque]');
