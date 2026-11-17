@@ -217,8 +217,90 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
 .lnk{font-size:.8rem;font-weight:500;color:var(--accent)}
 .lnk[hidden]{display:none}
 
+/* Revisar: una tarjeta a la vez; izquierda = no, derecha = me gusta, botón = tal vez */
+.rev-i{color:var(--accent)}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:500;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.b-si{color:var(--ok);background:var(--ok-soft)}
+.b-no{color:#b3261e;background:#fbe4e2}
+.b-tal{color:var(--warn);background:var(--warn-soft)}
+.b-nuevo{color:var(--accent);background:var(--accent-soft)}
+.b-precio{color:var(--warn);background:var(--warn-soft)}
+.item-com{display:block;font-size:.8rem;color:var(--muted);font-style:italic}
+.cal{display:flex;flex-direction:column;gap:8px}
+.cal-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:.88rem}
+.cal-row .q{color:var(--muted);font-style:italic}
+.dbtn{font-weight:500;font-size:.88rem;border:1px solid var(--line);border-radius:8px;padding:6px 12px;transition:background-color .12s ease,border-color .12s ease}
+.dbtn:hover{border-color:var(--accent)}
+.dbtn.on.d-si{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.dbtn.on.d-no{background:#b3261e;border-color:#b3261e;color:#fff}
+.dbtn.on.d-tal{background:var(--warn);border-color:var(--warn);color:var(--surface)}
+.main[data-vista="mazo"]{grid-template-columns:minmax(0,1fr)}
+.main[data-vista="mazo"] .list-wrap{display:none}
+.mazo{display:flex;flex-direction:column;gap:14px;max-width:920px;width:100%;margin:0 auto}
+.mz-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.mz-top select{color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;max-width:100%;min-width:0;flex:0 1 auto}
+.mz-n{font-size:.86rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mz-salir{display:none;font-weight:500;color:var(--accent);padding:4px 0;white-space:nowrap}
+.mz-area{position:relative;height:min(620px, calc(100dvh - 340px));min-height:380px}
+.card{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.08);
+  touch-action:pan-y;user-select:none;-webkit-user-select:none;will-change:transform}
+.card.entra{animation:cardIn .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes cardIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+.card-ph{grid-column:1;grid-row:1 / span 2;background:#fff;display:grid;place-items:center;border-right:1px solid var(--line);min-height:0}
+.card-ph .ph{width:100%;height:100%;border-radius:0;border:0;font-size:.9rem}
+.card-ph img{padding:14px;-webkit-user-drag:none}
+.card-head{grid-column:2;padding:18px 20px 12px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line)}
+.card-head h2{font-size:1.2rem}
+.card-head .price b{font-size:1.3rem}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.card-specs{grid-column:2;overflow-y:auto;overscroll-behavior:contain;padding:4px 20px 18px}
+.card-specs dl{margin:0;display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:0 14px}
+.card-specs dt,.card-specs dd{margin:0;padding:8px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.card-specs dt{color:var(--muted);font-size:.82rem}
+.card-specs dd{overflow-wrap:anywhere}
+.card-specs .note,.card-specs .src{margin-top:12px}
+.card-specs label{display:flex;flex-direction:column;gap:4px;margin-top:14px;font-size:.8rem;color:var(--muted)}
+.card-specs textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;resize:vertical;min-height:60px;user-select:text;-webkit-user-select:text}
+.sello{position:absolute;top:18px;font-weight:700;font-size:1.3rem;letter-spacing:.06em;padding:4px 12px;border:3px solid;border-radius:10px;opacity:0;pointer-events:none;background:var(--surface)}
+.sello.s-si{left:18px;color:var(--ok);transform:rotate(-12deg)}
+.sello.s-no{right:18px;color:#b3261e;transform:rotate(12deg)}
+.sello.s-tal{left:50%;top:auto;bottom:18px;color:var(--warn);transform:translateX(-50%)}
+.mz-btns{display:flex;justify-content:center;align-items:center;gap:18px;padding-bottom:4px}
+.mz-btns button{display:grid;place-items:center;border-radius:999px;background:var(--surface);border:1px solid var(--line);
+  box-shadow:0 2px 8px rgba(0,0,0,.08);transition:transform .12s ease,background-color .12s ease}
+.mz-btns button:active{transform:scale(.9)}
+.mz-btns button:disabled{opacity:.35;cursor:default}
+.mz-b{width:62px;height:62px;font-size:1.6rem;line-height:1}
+.mz-b.d-no{color:#b3261e}.mz-b.d-si{color:var(--ok)}.mz-b.d-tal{width:50px;height:50px;font-size:1.25rem;color:var(--warn);font-weight:600}
+.mz-undo{width:42px;height:42px;font-size:1.1rem;color:var(--muted)}
+.mz-ayuda{text-align:center;font-size:.78rem;color:var(--faint)}
+.mz-vacio{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;color:var(--muted);
+  height:100%;border:1px dashed var(--line);border-radius:16px;padding:24px}
+.mz-vacio b{font-size:1.15rem;color:var(--fg)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .b-no{color:#f2b8b5;background:#3a1715} }
+:root[data-theme="dark"] .b-no{color:#f2b8b5;background:#3a1715}
+
 @media (max-width:820px){
   .main{grid-template-columns:minmax(0,1fr)}
+  /* En celular la tarjeta ocupa toda la pantalla */
+  html.mazo-on,html.mazo-on body{overflow:hidden}
+  .main[data-vista="mazo"] .detail{display:block}
+  .mazo{position:fixed;inset:0;z-index:30;background:var(--bg);max-width:none;gap:10px;
+    padding:max(10px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px))}
+  .mz-salir{display:inline-flex}
+  .mz-top{flex-wrap:nowrap}
+  .mz-top select{flex:1 1 auto}
+  .mz-area{flex:1 1 auto;height:auto;min-height:0}
+  .card{display:flex;flex-direction:column}
+  .card-ph{flex:0 0 33%;border-right:0;border-bottom:1px solid var(--line)}
+  .card-ph img{padding:8px}
+  .card-head{padding:12px 16px 10px;gap:4px}
+  .card-head h2{font-size:1.05rem}
+  .card-head .facts{font-size:.8rem}
+  .card-specs{flex:1 1 auto;padding:2px 16px 14px}
+  .mz-ayuda{display:none}
+  .mz-btns{gap:22px}
   .main[data-show="list"] .detail{display:none}
   .main[data-show="detail"] .list-wrap{display:none}
   .back{display:inline-flex}
@@ -307,6 +389,67 @@ var D = {categorias:{}, etiquetas:{}, productos:[]};
 var state = {linea:'SUNL', cat:null, fav:false, filtros:{}, q:'', sel:null, comp:[], vista:'ficha', animate:false};
 var FAV = {};  // id → true; se guardan en Supabase (catalogo.favoritos)
 
+// ---- Revisar ----
+// Cada cuenta califica productos: 'si' (me gusta), 'tal_vez' o 'no'. Se guardan en catalogo.decisiones.
+// HIST dice qué productos son nuevos (alta) o cambiaron de precio (cambio_precio); lo llena catalogo_subir.
+// Un producto vuelve a "Por revisar" si su precio cambió después de calificarlo.
+var DEC = {};   // user_id → {producto_id → {decision, comentario, precio, moneda, actualizado}}
+var HIST = {};  // producto_id → {alta, cambio_precio, precio_anterior, moneda_anterior}
+var YO = null, USUARIOS = [], DESHACER = [];
+var NOMBRE_DEC = {si:'Me gusta', tal_vez:'Tal vez', no:'No me gusta'};
+var ICONO_DEC = {si:'♥', tal_vez:'?', no:'✕'};
+var CLASE_DEC = {si:'si', tal_vez:'tal', no:'no'};
+state.rev=false; state.revSub='pendientes'; state.revQue='novedades'; state.revDe=null; state.revActual=null;
+
+function mias(){ return DEC[YO] || (DEC[YO]={}); }
+function cambioDe(id){
+  var h=HIST[id]; if(!h) return null;
+  var a=h.alta||'', c=h.cambio_precio||''; return a>c ? a : (c||null);
+}
+// Por revisar = sin calificar por mí, o calificado antes de su último cambio (nuevo o precio distinto).
+function pendiente(p){
+  var d=mias()[p.id], c=cambioDe(p.id);
+  return !d || (c && Date.parse(d.actualizado) < Date.parse(c));
+}
+function esNovedad(p){ return !!HIST[p.id]; }
+function enQue(p, que){
+  if(que==='novedades') return esNovedad(p);
+  var i=que.indexOf('|'); return p.linea===que.slice(0,i) && p.categoria===que.slice(i+1);
+}
+function mazo(){
+  var ps=D.productos.filter(function(p){ return enQue(p, state.revQue) && pendiente(p); }).sort(porLineaTipo);
+  if(state.revActual){
+    var i=ps.map(function(p){ return p.id; }).indexOf(state.revActual);
+    if(i>0) ps.unshift(ps.splice(i,1)[0]);
+  }
+  return ps;
+}
+function nPendientes(){ return D.productos.filter(function(p){ return esNovedad(p) && pendiente(p); }).length; }
+function nombreDe(uid){ var u=USUARIOS.filter(function(x){ return x.id===uid; })[0]; return u ? u.nombre : 'Otra cuenta'; }
+function decDe(uid, id){ return (DEC[uid]||{})[id]; }
+function nDecision(uid, d){ var m=DEC[uid]||{}; return D.productos.filter(function(p){ return m[p.id] && m[p.id].decision===d; }).length; }
+function badgeDec(d){ return '<span class="badge b-'+CLASE_DEC[d]+'">'+ICONO_DEC[d]+' '+NOMBRE_DEC[d]+'</span>'; }
+// Contexto para decidir: qué tan caro es contra los de su mismo tipo (misma moneda).
+function contexto(p){
+  if(vacio(p.precio)) return '';
+  var otros=D.productos.filter(function(q){ return q.linea===p.linea && q.categoria===p.categoria && q.moneda===p.moneda && !vacio(q.precio); })
+    .sort(porPrecio);
+  if(otros.length<2) return '';
+  var min=otros[0], pos=otros.map(function(q){ return q.id; }).indexOf(p.id)+1;
+  if(min.id===p.id || p.precio===min.precio) return '<span class="badge b-si">El más barato de '+otros.length+' en su tipo</span>';
+  var pct=Math.round((p.precio-min.precio)/min.precio*100);
+  return '<span class="badge b-precio" title="El más barato: '+esc(min.nombre)+' ('+esc(min.proveedor)+') a '+esc(dinero(min))+'">'+
+    '+'+pct+' % vs. el más barato · '+pos+' de '+otros.length+'</span>';
+}
+function chipsCambio(p){
+  var h=HIST[p.id]; if(!h) return '';
+  if(h.cambio_precio && h.precio_anterior!==undefined)
+    return '<span class="badge b-precio">Precio cambió · antes '+esc(dinero({precio:h.precio_anterior, moneda:h.moneda_anterior||p.moneda}))+'</span>';
+  if(h.alta) return '<span class="badge b-nuevo">Nuevo</span>';
+  if(h.cambio_precio) return '<span class="badge b-precio">Precio nuevo</span>';
+  return '';
+}
+
 var $ = function(id){ return document.getElementById(id); };
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 var DIACRITICOS = new RegExp('['+String.fromCharCode(0x300)+'-'+String.fromCharCode(0x36f)+']','g');
@@ -393,7 +536,7 @@ function pasaFiltros(p){
   return true;
 }
 // Lista con productos de varios tipos (búsqueda o favoritos): se ordena por línea, tipo y precio.
-function mixta(){ return !!(state.q || state.fav); }
+function mixta(){ return !!(state.q || state.fav || state.rev); }
 function porLineaTipo(a,b){
   var lineas=Object.keys(D.categorias);
   return (lineas.indexOf(a.linea)-lineas.indexOf(b.linea)) || a.categoria.localeCompare(b.categoria,'es') || porPrecio(a,b);
@@ -403,7 +546,13 @@ function favoritosBase(){
   var ws=state.q?palabras(state.q):null;
   return D.productos.filter(function(p){ return FAV[p.id] && (!ws || coincide(p, ws)); });
 }
+// Lista de una calificación (Me gusta / Tal vez / No) de la cuenta elegida en "Decisiones de".
+function revisadosBase(){
+  var ws=state.q?palabras(state.q):null, m=DEC[state.revDe]||{};
+  return D.productos.filter(function(p){ return m[p.id] && m[p.id].decision===state.revSub && (!ws || coincide(p, ws)); });
+}
 function visibles(){
+  if(state.rev) return state.revSub==='pendientes' ? [] : revisadosBase().filter(pasaFiltros).sort(porLineaTipo);
   if(state.fav) return favoritosBase().filter(pasaFiltros).sort(porLineaTipo);
   if(state.q){
     var ws=palabras(state.q);
@@ -429,9 +578,17 @@ function renderLineas(){
     var n=D.productos.filter(function(p){ return p.linea===l; }).length;
     return '<button role="tab" data-linea="'+l+'" aria-selected="'+(!mixta() && state.linea===l)+'">'+l+' <span class="n">'+n+'</span></button>';
   }).join('')+
-  '<button role="tab" data-favs aria-selected="'+state.fav+'"><span class="star-i">★</span> Favoritos <span class="n">'+nFav()+'</span></button>';
+  '<button role="tab" data-favs aria-selected="'+state.fav+'"><span class="star-i">★</span> Favoritos <span class="n">'+nFav()+'</span></button>'+
+  '<button role="tab" data-rev aria-selected="'+state.rev+'"><span class="rev-i">♥</span> Revisar <span class="n">'+nPendientes()+'</span></button>';
 }
 function renderCats(){
+  if(state.rev){
+    var subs=[['pendientes','Por revisar',null],['si','♥ Me gusta',nDecision(state.revDe,'si')],['tal_vez','? Tal vez',nDecision(state.revDe,'tal_vez')],['no','✕ No me gusta',nDecision(state.revDe,'no')]];
+    $('cats').innerHTML='<div class="fam-row">'+subs.map(function(s){
+      return '<button class="cat" data-rsub="'+s[0]+'" aria-pressed="'+(state.revSub===s[0])+'">'+s[1]+(s[2]===null?'':' <span class="n">'+s[2]+'</span>')+'</button>';
+    }).join('')+'</div>';
+    return;
+  }
   if(state.fav){ $('cats').innerHTML=''; return; }
   $('cats').innerHTML=familias().map(function(f){
     return '<div class="fam"><small>'+esc(f.fam)+'</small><div class="fam-row">'+f.tipos.map(function(t){
@@ -453,6 +610,18 @@ function selectFiltro(k, lbl, base){
     }).join('')+'</select></label>';
 }
 function renderFiltros(){
+  if(state.rev){
+    if(state.revSub==='pendientes'){ $('filters').innerHTML=''; return; }
+    var rb=revisadosBase(), rn=visibles().length;
+    var quien=USUARIOS.length>1 ? '<label class="f"><span>Decisiones de</span><select data-revde>'+USUARIOS.map(function(u){
+      return '<option value="'+esc(u.id)+'"'+(u.id===state.revDe?' selected':'')+'>'+esc(u.nombre)+(u.id===YO?' (tú)':'')+'</option>';
+    }).join('')+'</select></label>' : '';
+    $('filters').innerHTML=quien+selectFiltro('categoria','Tipo',rb)+selectFiltro('proveedor','Proveedor',rb)+
+      (Object.keys(state.filtros).length?'<button class="clear" data-clear>Quitar filtros</button>':'')+
+      '<span class="res">'+(rn===1?'1 producto':rn.toLocaleString('es-MX')+' productos')+(state.q?' con “'+esc(state.q)+'”':'')+'</span>'+
+      (state.q?'<button class="clear" data-clearq>Borrar búsqueda</button>':'');
+    return;
+  }
   if(state.fav){
     var base=favoritosBase(), n=visibles().length;
     $('filters').innerHTML=selectFiltro('categoria','Tipo',base)+selectFiltro('proveedor','Proveedor',base)+
@@ -476,19 +645,22 @@ function renderFiltros(){
 function renderList(){
   var ps=visibles(), html='';
   ps.forEach(function(p){
-    var cmp=state.comp.indexOf(p.id)>=0;
+    var cmp=state.comp.indexOf(p.id)>=0, rd=state.rev && decDe(state.revDe, p.id);
+    var extraRev=rd ? ((rd.comentario?'<span class="item-com">“'+esc(rd.comentario)+'”</span>':'')+
+      (state.revDe===YO && pendiente(p)?'<span class="badge b-precio">Cambió después de calificarlo</span>':'')) : '';
     html+='<li class="'+(state.sel===p.id && state.vista==='ficha'?'cur':'')+'">'+
       '<button class="item" data-id="'+esc(p.id)+'">'+foto(p,'ph-list')+
         '<span class="item-name">'+esc(p.nombre)+'</span>'+
         '<span class="item-side"><b>'+esc(dinero(p))+'</b>'+esc(p.incoterm||'')+
           (fechaPrecio(p)?'<small class="fp">al '+esc(fechaPrecio(p))+'</small>':'')+'</span>'+
-        '<span class="item-sub">'+(mixta()?'<span class="item-cat">'+esc(p.linea)+' · '+esc(p.categoria)+'</span>':'')+esc(p.proveedor)+(resumen(p)?' · '+esc(resumen(p)):'')+'</span>'+
+        '<span class="item-sub">'+(mixta()?'<span class="item-cat">'+esc(p.linea)+' · '+esc(p.categoria)+'</span>':'')+esc(p.proveedor)+(resumen(p)?' · '+esc(resumen(p)):'')+extraRev+'</span>'+
       '</button>'+
       '<button class="star" data-fav-id="'+esc(p.id)+'" aria-pressed="'+!!FAV[p.id]+'" aria-label="'+(FAV[p.id]?'Quitar de favoritos':'Agregar a favoritos')+'" title="'+(FAV[p.id]?'Quitar de favoritos':'Agregar a favoritos')+'">'+(FAV[p.id]?'★':'☆')+'</button>'+
       '<button class="pick" data-pick="'+esc(p.id)+'" aria-pressed="'+cmp+'" aria-label="Comparar '+esc(p.nombre)+'" title="Comparar"><i></i></button>'+
     '</li>';
   });
-  if(!ps.length && state.fav && !nFav()) html='<li class="empty-list">Todavía no hay favoritos. Usa la estrella ☆ de cualquier producto.</li>';
+  if(!ps.length && state.rev && !revisadosBase().length && !state.q) html='<li class="empty-list">Todavía no hay productos en “'+NOMBRE_DEC[state.revSub]+'”'+(state.revDe!==YO?' de '+esc(nombreDe(state.revDe)):'')+'.</li>';
+  else if(!ps.length && state.fav && !nFav()) html='<li class="empty-list">Todavía no hay favoritos. Usa la estrella ☆ de cualquier producto.</li>';
   else if(!ps.length) html='<li class="empty-list">Ningún producto coincide'+(state.q?' con “'+esc(state.q)+'” en todo el catálogo':' con estos filtros')+'.</li>';
   $('list').innerHTML=html;
 }
@@ -512,6 +684,7 @@ function ficha(p){
       (p.piezas_40hq?'<span>'+p.piezas_40hq+' piezas por contenedor 40HQ</span>':'')+'</div>'+
     '<div class="btns"><button class="btn'+(enComp?' on':'')+'" data-pick="'+esc(p.id)+'">'+(enComp?'En comparación ✓':'Agregar a comparar')+'</button>'+
       '<button class="btn'+(FAV[p.id]?' on':'')+'" data-fav-id="'+esc(p.id)+'">'+(FAV[p.id]?'★ En favoritos':'☆ Agregar a favoritos')+'</button></div>'+
+    calificaciones(p)+
     '<div class="block"><h3>Características</h3><div class="specs">'+
       campos.concat(extra).map(function(k){ return spec(etiqueta(k), a[k]); }).join('')+
       (p.medidas_mm?spec('Medidas (mm)', p.medidas_mm):'')+(p.empaque?spec('Empaque', p.empaque):'')+
@@ -519,6 +692,72 @@ function ficha(p){
     (p.notas?'<div class="note">'+esc(p.notas)+'</div>':'')+
     (p.archivo?'<div class="src">Fuente: '+esc(p.archivo)+'</div>':'');
 }
+// En la ficha: mi calificación (se puede cambiar) y la de las otras cuentas.
+function calificaciones(p){
+  var m=mias()[p.id];
+  var otros=USUARIOS.filter(function(u){ return u.id!==YO && decDe(u.id,p.id); }).map(function(u){
+    var d=decDe(u.id,p.id);
+    return '<div class="cal-row"><b>'+esc(u.nombre)+'</b>'+badgeDec(d.decision)+(d.comentario?'<span class="q">“'+esc(d.comentario)+'”</span>':'')+'</div>';
+  }).join('');
+  return '<div class="block cal"><h3>Tu calificación</h3><div class="cal-row">'+
+    ['no','tal_vez','si'].map(function(d){
+      return '<button class="dbtn d-'+CLASE_DEC[d]+(m && m.decision===d?' on':'')+'" data-dec="'+d+'" data-dec-id="'+esc(p.id)+'">'+ICONO_DEC[d]+' '+NOMBRE_DEC[d]+'</button>';
+    }).join('')+(m && m.comentario?'<span class="q">“'+esc(m.comentario)+'”</span>':'')+'</div>'+otros+'</div>';
+}
+
+// ---- Tarjeta de Revisar ----
+function opcionesQue(){
+  var html='<option value="novedades"'+(state.revQue==='novedades'?' selected':'')+'>Novedades ('+nPendientes()+')</option>';
+  Object.keys(D.categorias).forEach(function(l){
+    var cats={}; D.productos.forEach(function(p){ if(p.linea===l && pendiente(p)) cats[p.categoria]=(cats[p.categoria]||0)+1; });
+    var ks=Object.keys(cats).sort(function(a,b){ return a.localeCompare(b,'es'); });
+    if(!ks.length) return;
+    html+='<optgroup label="'+esc(l)+' · por tipo">'+ks.map(function(c){
+      var v=l+'|'+c; return '<option value="'+esc(v)+'"'+(state.revQue===v?' selected':'')+'>'+esc(c)+' ('+cats[c]+')</option>';
+    }).join('')+'</optgroup>';
+  });
+  return html;
+}
+function tarjeta(p){
+  var a=p.atributos||{}, campos=camposDe(p.categoria);
+  var extra=Object.keys(a).filter(function(k){ return campos.indexOf(k)<0 && !vacio(a[k]); });
+  var filas=campos.concat(extra).filter(function(k){ return !vacio(a[k]); }).map(function(k){ return [etiqueta(k), a[k]]; });
+  if(p.piezas_40hq) filas.push(['Piezas por 40HQ', p.piezas_40hq]);
+  if(p.medidas_mm) filas.push(['Medidas (mm)', p.medidas_mm]);
+  if(p.empaque) filas.push(['Empaque', p.empaque]);
+  var url=p.foto && FOTO[p.foto], m=mias()[p.id];
+  return '<article class="card entra" id="card" data-id="'+esc(p.id)+'">'+
+    '<div class="card-ph">'+(url?'<a class="ph si" href="'+esc(url)+'" target="_blank" rel="noopener" title="Ver la foto en grande" draggable="false"><img src="'+esc(url)+'" alt="Foto de '+esc(p.nombre)+'" draggable="false"></a>':foto(p,''))+'</div>'+
+    '<div class="card-head"><span class="eyebrow">'+esc(p.linea)+' · '+esc(p.categoria)+'</span><h2>'+esc(p.nombre)+'</h2>'+
+      '<div class="price"><b>'+esc(dinero(p))+'</b><span>'+esc(p.incoterm||'')+'</span>'+(fechaPrecio(p)?'<span class="fp-tag">al '+esc(fechaPrecio(p))+'</span>':'')+'</div>'+
+      '<div class="facts"><span>Proveedor <b>'+esc(p.proveedor)+'</b></span>'+(p.modelo?'<span>Modelo <b class="code">'+esc(p.modelo)+'</b></span>':'')+'</div>'+
+      '<div class="chips">'+chipsCambio(p)+contexto(p)+(m?badgeDec(m.decision):'')+'</div></div>'+
+    '<div class="card-specs"><dl>'+(filas.length?filas.map(function(f){ return '<dt>'+esc(f[0])+'</dt><dd>'+esc(valor(f[1]))+'</dd>'; }).join(''):'<dt>Características</dt><dd class="nd">No indicadas</dd>')+'</dl>'+
+      (p.notas?'<div class="note">'+esc(p.notas)+'</div>':'')+
+      (p.archivo?'<div class="src">Fuente: '+esc(p.archivo)+'</div>':'')+
+      '<label>Comentario (opcional)<textarea id="mz-com" rows="2" placeholder="Ej.: pedir precio CIF, preguntar garantía">'+esc(m && m.comentario || '')+'</textarea></label></div>'+
+    '<span class="sello s-si">ME GUSTA</span><span class="sello s-no">NO</span><span class="sello s-tal">TAL VEZ</span>'+
+  '</article>';
+}
+function vistaMazo(){
+  var ps=mazo(), p=ps[0];
+  var top='<div class="mz-top"><button class="mz-salir" data-mz-salir>‹ Listas</button>'+
+    '<select data-mz-que aria-label="Qué revisar">'+opcionesQue()+'</select>'+
+    '<span class="mz-n">'+(ps.length===1?'1 por revisar':ps.length+' por revisar')+'</span></div>';
+  var area;
+  if(p) area=tarjeta(p);
+  else if(state.revQue==='novedades') area='<div class="mz-vacio"><b>No hay novedades por revisar</b>'+
+    '<span>Cuando se suban catálogos o precios nuevos, aparecen aquí.<br>Mientras, puedes revisar cualquier tipo con el menú de arriba.</span></div>';
+  else area='<div class="mz-vacio"><b>Todo revisado ✓</b><span>Ya calificaste todos los productos de este tipo.</span></div>';
+  return '<div class="mazo">'+top+'<div class="mz-area">'+area+'</div>'+
+    '<div class="mz-btns">'+
+      '<button class="mz-undo" data-mz-undo title="Deshacer la última" aria-label="Deshacer la última"'+(DESHACER.length?'':' disabled')+'>↶</button>'+
+      '<button class="mz-b d-no" data-mz="no" title="No me gusta (←)" aria-label="No me gusta"'+(p?'':' disabled')+'>✕</button>'+
+      '<button class="mz-b d-tal" data-mz="tal_vez" title="Tal vez (↓)" aria-label="Tal vez"'+(p?'':' disabled')+'>?</button>'+
+      '<button class="mz-b d-si" data-mz="si" title="Me gusta (→)" aria-label="Me gusta"'+(p?'':' disabled')+'>♥</button>'+
+    '</div><div class="mz-ayuda">Desliza la tarjeta o usa las flechas ← no · ↓ tal vez · → me gusta</div></div>';
+}
+
 function comparacion(){
   var ps=state.comp.map(producto).filter(Boolean);
   if(!ps.length) return '<p class="hint">Marca la casilla de dos o más productos para compararlos.</p>';
@@ -555,6 +794,12 @@ function comparacion(){
 }
 function renderDetail(){
   var html;
+  var enMazo=state.rev && state.revSub==='pendientes';
+  document.documentElement.classList.toggle('mazo-on', enMazo);
+  if(enMazo){
+    $('main').setAttribute('data-vista','mazo');
+    $('detail').innerHTML=vistaMazo(); activarArrastre(); state.animate=false; return;
+  }
   if(state.vista==='comparar') html=comparacion();
   else { var p=producto(state.sel); html=p?ficha(p):'<p class="hint">Escoge un producto para ver su ficha.</p>'; }
   $('main').setAttribute('data-vista', state.vista);
@@ -563,7 +808,7 @@ function renderDetail(){
 }
 function renderBar(){
   var n=state.comp.length;
-  $('bar').hidden = n===0 || (state.vista==='comparar' && $('main').getAttribute('data-show')==='detail');
+  $('bar').hidden = n===0 || (state.rev && state.revSub==='pendientes') || (state.vista==='comparar' && $('main').getAttribute('data-show')==='detail');
   $('bar-n').textContent = n===1 ? '1 para comparar' : n+' para comparar';
   $('bar-go').disabled = n<2;
   $('bar-go').style.opacity = n<2 ? '.5' : '1';
@@ -572,7 +817,7 @@ function render(){ renderLineas(); renderCats(); renderFiltros(); renderList(); 
 
 function borrarBusqueda(){ state.q=''; $('q').value=''; }
 function elegirCategoria(cat){
-  borrarBusqueda(); state.fav=false; state.cat=cat; state.filtros={};
+  borrarBusqueda(); state.fav=false; state.rev=false; state.cat=cat; state.filtros={};
   var ps=visibles(); state.sel=ps.length?ps[0].id:null;
   if(state.vista!=='comparar') state.vista='ficha';
 }
@@ -583,9 +828,97 @@ function elegirLinea(l){
 function mostrar(vista){ state.vista=vista; state.animate=true; $('main').setAttribute('data-show','detail'); if(esCelular.matches) window.scrollTo(0,0); }
 function nFav(){ return D.productos.filter(function(p){ return FAV[p.id]; }).length; }
 function verFavoritos(){
-  borrarBusqueda(); state.fav=true; state.filtros={};
+  borrarBusqueda(); state.fav=true; state.rev=false; state.filtros={};
   var ps=visibles(); state.sel=ps.length?ps[0].id:null;
   if(state.vista!=='comparar') state.vista='ficha';
+}
+function verRevisar(sub){
+  borrarBusqueda(); state.rev=true; state.fav=false; state.filtros={}; state.revSub=sub;
+  if(!state.revDe || !USUARIOS.some(function(u){ return u.id===state.revDe; })){
+    // Si yo no he calificado nada pero otra cuenta sí, se muestran las de esa cuenta.
+    var conDec=USUARIOS.filter(function(u){ return Object.keys(DEC[u.id]||{}).length; });
+    state.revDe = Object.keys(mias()).length || !conDec.length ? YO : conDec[0].id;
+  }
+  if(sub!=='pendientes'){ var ps=visibles(); state.sel=ps.length?ps[0].id:null; if(state.vista!=='comparar') state.vista='ficha'; }
+}
+// Califica un producto: se marca de inmediato y se guarda en Supabase; si falla, se regresa.
+function decidir(id, d, comentario){
+  var antes=mias()[id] ? JSON.parse(JSON.stringify(mias()[id])) : null;
+  var p=producto(id)||{};
+  if(comentario===undefined) comentario=antes ? antes.comentario : null;
+  mias()[id]={decision:d, comentario:comentario||undefined, precio:p.precio, moneda:p.moneda, actualizado:new Date().toISOString()};
+  return guardarDec(id, d, comentario, null, antes);
+}
+function guardarDec(id, d, comentario, fecha, antes){
+  return sb.rpc('catalogo_decidir',{producto:id, decision:d, comentario:comentario||null, fecha:fecha}).then(function(r){
+    if(!r.error) return true;
+    if(antes) mias()[id]=antes; else delete mias()[id];
+    $('origen').textContent='No se guardó la calificación: '+r.error.message; $('origen').className='tag local';
+    render(); return false;
+  });
+}
+function decidirTarjeta(d){
+  var c=$('card'); if(!c || c.getAttribute('data-saliendo')) return;
+  var id=c.getAttribute('data-id'), com=($('mz-com')||{}).value;
+  DESHACER.push({id:id, antes:mias()[id] ? JSON.parse(JSON.stringify(mias()[id])) : null});
+  if(DESHACER.length>50) DESHACER.shift();
+  c.setAttribute('data-saliendo','1');
+  var reducir=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  c.style.transition=reducir?'none':'transform .26s cubic-bezier(.4,0,1,1), opacity .26s ease';
+  c.style.transform = d==='si' ? 'translateX(130%) rotate(16deg)' : d==='no' ? 'translateX(-130%) rotate(-16deg)' : 'translateY(45%) scale(.9)';
+  c.style.opacity='0';
+  var s=c.querySelector('.s-'+CLASE_DEC[d]); if(s) s.style.opacity='1';
+  setTimeout(function(){
+    if(state.revActual===id) state.revActual=null;
+    decidir(id, d, com);
+    renderLineas(); renderDetail();
+  }, reducir?0:240);
+}
+function deshacer(){
+  var u=DESHACER.pop(); if(!u) return;
+  var actual=mias()[u.id];
+  if(u.antes) mias()[u.id]=u.antes; else delete mias()[u.id];
+  state.revActual=u.id;
+  // Si el producto no es del grupo que se está revisando, se cambia a su tipo para que aparezca.
+  var p=producto(u.id); if(p && !enQue(p, state.revQue)) state.revQue=p.linea+'|'+p.categoria;
+  renderLineas(); renderDetail();
+  guardarDec(u.id, u.antes?u.antes.decision:null, u.antes?u.antes.comentario:null, u.antes?u.antes.actualizado:null, actual);
+}
+// Arrastrar la tarjeta: a la derecha = me gusta, a la izquierda = no. Lo vertical queda para leer la tabla.
+function activarArrastre(){
+  var c=$('card'); if(!c) return;
+  var x0=0, y0=0, t0=0, dx=0, activo=false, horizontal=null, movio=false;
+  var sSi=c.querySelector('.s-si'), sNo=c.querySelector('.s-no');
+  c.addEventListener('pointerdown',function(e){
+    if(e.button>0 || e.target.closest('textarea,select,input')) return;
+    activo=true; horizontal=null; movio=false; x0=e.clientX; y0=e.clientY; t0=Date.now(); dx=0;
+    c.style.transition='none';
+  });
+  c.addEventListener('pointermove',function(e){
+    if(!activo) return;
+    var mx=e.clientX-x0, my=e.clientY-y0;
+    if(horizontal===null){
+      if(Math.abs(mx)<8 && Math.abs(my)<8) return;
+      horizontal=Math.abs(mx)>Math.abs(my);
+      if(!horizontal){ activo=false; return; }
+      movio=true; try{ c.setPointerCapture(e.pointerId); }catch(_){}
+    }
+    dx=mx;
+    c.style.transform='translateX('+dx+'px) rotate('+(dx/22)+'deg)';
+    sSi.style.opacity=Math.max(0,Math.min(1,dx/110)); sNo.style.opacity=Math.max(0,Math.min(1,-dx/110));
+  });
+  function soltar(){
+    if(!activo){ return; } activo=false;
+    if(!horizontal) return;
+    var vel=Math.abs(dx)/Math.max(1,Date.now()-t0);
+    if(Math.abs(dx)>c.offsetWidth*0.28 || (vel>0.6 && Math.abs(dx)>50)){ decidirTarjeta(dx>0?'si':'no'); return; }
+    c.style.transition='transform .3s cubic-bezier(.2,.9,.3,1.2)'; c.style.transform='';
+    sSi.style.opacity=0; sNo.style.opacity=0;
+  }
+  c.addEventListener('pointerup',soltar);
+  c.addEventListener('pointercancel',function(){ if(activo && horizontal){ soltar(); } activo=false; });
+  // Si se arrastró, que no se abra la foto.
+  c.addEventListener('click',function(e){ if(movio){ e.preventDefault(); e.stopPropagation(); movio=false; } }, true);
 }
 // Pone o quita un favorito: se marca de inmediato y se guarda en Supabase; si falla, se regresa.
 function alternarFav(id){
@@ -607,10 +940,16 @@ function alternar(id){
 }
 
 $('lineas').addEventListener('click',function(e){
+  if(e.target.closest('[data-rev]')){ verRevisar('pendientes'); state.animate=true; $('main').setAttribute('data-show', esCelular.matches?'detail':'list'); render(); return; }
   if(e.target.closest('[data-favs]')){ verFavoritos(); state.animate=true; $('main').setAttribute('data-show','list'); render(); return; }
   var b=e.target.closest('[data-linea]'); if(!b) return; elegirLinea(b.getAttribute('data-linea')); state.animate=true; $('main').setAttribute('data-show','list'); render(); });
-$('cats').addEventListener('click',function(e){ var b=e.target.closest('[data-cat]'); if(!b) return; elegirCategoria(b.getAttribute('data-cat')); state.animate=true; $('main').setAttribute('data-show','list'); render(); });
+$('cats').addEventListener('click',function(e){
+  var rs=e.target.closest('[data-rsub]');
+  if(rs){ verRevisar(rs.getAttribute('data-rsub')); state.animate=true; $('main').setAttribute('data-show', rs.getAttribute('data-rsub')==='pendientes'?'detail':'list'); render(); return; }
+  var b=e.target.closest('[data-cat]'); if(!b) return; elegirCategoria(b.getAttribute('data-cat')); state.animate=true; $('main').setAttribute('data-show','list'); render(); });
 $('filters').addEventListener('change',function(e){
+  var rd=e.target.closest('[data-revde]');
+  if(rd){ state.revDe=rd.value; state.filtros={}; var ps=visibles(); state.sel=ps.length?ps[0].id:null; render(); return; }
   var s=e.target.closest('[data-f]'); if(!s) return;
   if(s.value) state.filtros[s.getAttribute('data-f')]=s.value; else delete state.filtros[s.getAttribute('data-f')];
   renderFiltros(); renderList();
@@ -625,7 +964,23 @@ $('list').addEventListener('click',function(e){
   var b=e.target.closest('.item'); if(!b) return;
   state.sel=b.getAttribute('data-id'); mostrar('ficha'); renderList(); renderDetail(); renderBar();
 });
+$('detail').addEventListener('change',function(e){
+  var q=e.target.closest('[data-mz-que]'); if(!q) return;
+  state.revQue=q.value; state.revActual=null; renderDetail();
+});
 $('detail').addEventListener('click',function(e){
+  var mz=e.target.closest('[data-mz]'); if(mz){ decidirTarjeta(mz.getAttribute('data-mz')); return; }
+  if(e.target.closest('[data-mz-undo]')){ deshacer(); return; }
+  if(e.target.closest('[data-mz-salir]')){ verRevisar('si'); $('main').setAttribute('data-show','list'); render(); return; }
+  var dc=e.target.closest('[data-dec]');
+  if(dc){
+    var did=dc.getAttribute('data-dec-id'), dd=dc.getAttribute('data-dec');
+    var m=mias()[did];
+    if(m && m.decision===dd){ var antes=JSON.parse(JSON.stringify(m)); delete mias()[did]; guardarDec(did, null, null, null, antes); }
+    else decidir(did, dd);
+    renderLineas(); renderCats(); renderList(); renderDetail();
+    return;
+  }
   var fv=e.target.closest('[data-fav-id]'); if(fv){ alternarFav(fv.getAttribute('data-fav-id')); return; }
   if(e.target.closest('[data-back]')){ $('main').setAttribute('data-show','list'); if(state.vista==='comparar') state.vista='ficha'; renderList(); renderDetail(); renderBar(); return; }
   var pk=e.target.closest('[data-pick]');
@@ -633,7 +988,21 @@ $('detail').addEventListener('click',function(e){
 });
 $('bar-go').addEventListener('click',function(){ if(state.comp.length<2) return; mostrar('comparar'); renderList(); renderDetail(); renderBar(); });
 $('bar-no').addEventListener('click',function(){ state.comp=[]; if(state.vista==='comparar') state.vista='ficha'; renderList(); renderDetail(); renderBar(); });
-$('q').addEventListener('input',function(){ state.q=this.value.trim(); if(!state.fav) state.filtros={}; renderLineas(); renderCats(); renderFiltros(); renderList(); });
+$('q').addEventListener('input',function(){
+  state.q=this.value.trim();
+  // En la tarjeta no se busca: escribir manda a la búsqueda general.
+  if(state.rev && state.revSub==='pendientes'){ state.rev=false; state.vista='ficha'; $('main').setAttribute('data-show','list'); }
+  if(!state.fav && !state.rev) state.filtros={};
+  renderLineas(); renderCats(); renderFiltros(); renderList(); renderDetail(); renderBar();
+});
+// Teclado en la tarjeta: ← no, → me gusta, ↓ tal vez, Retroceso o Z = deshacer.
+document.addEventListener('keydown',function(e){
+  if(!(state.rev && state.revSub==='pendientes') || e.altKey || e.ctrlKey || e.metaKey) return;
+  if(e.target.closest && e.target.closest('input,textarea,select')) return;
+  var k={ArrowLeft:'no', ArrowRight:'si', ArrowDown:'tal_vez'}[e.key];
+  if(k){ e.preventDefault(); decidirTarjeta(k); return; }
+  if(e.key==='Backspace' || e.key==='z' || e.key==='Z'){ e.preventDefault(); deshacer(); }
+});
 
 // ---- Sesión y datos ----
 var arrancado=false;
@@ -655,6 +1024,9 @@ function cargar(){
     }
     D=r.data; if(!D.categorias) D.categorias={}; if(!D.productos) D.productos=[];
     FAV={}; (D.favoritos||[]).forEach(function(id){ FAV[id]=true; });
+    YO=D.yo; USUARIOS=D.usuarios||[]; DEC={}; HIST={};
+    (D.decisiones||[]).forEach(function(d){ (DEC[d.user_id]||(DEC[d.user_id]={}))[d.producto_id]=d; });
+    (D.historial||[]).forEach(function(h){ HIST[h.producto_id]=h; });
     $('login').hidden=true; $('app').hidden=false;
     $('origen').textContent=D.productos.length ? D.productos.length.toLocaleString('es-MX')+' productos' : 'Sin datos todavía';
     arrancar(); revisarLocal(); pedirFotos();
@@ -671,7 +1043,7 @@ $('login-form').addEventListener('submit',function(e){
   });
 });
 $('salir').addEventListener('click',function(){
-  sb.auth.signOut().then(function(){ D={categorias:{},etiquetas:{},productos:[]}; FAV={}; state.fav=false; arrancado=false; state.comp=[]; verLogin(); });
+  sb.auth.signOut().then(function(){ D={categorias:{},etiquetas:{},productos:[]}; FAV={}; DEC={}; HIST={}; DESHACER=[]; YO=null; state.fav=false; state.rev=false; state.revDe=null; arrancado=false; state.comp=[]; verLogin(); });
 });
 
 // Solo en la computadora (localhost): si existe datos/productos.json (lo genera build_catalogo.py),
