@@ -342,7 +342,8 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
 .rv-elegir:hover{border-color:var(--accent)}
 .rv-elegir b{flex:1 1 auto;min-width:0;font-weight:500;font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rv-elegir i{font-style:normal;color:var(--faint)}
-.ico{flex:0 0 auto;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:1.15rem;line-height:1;background:var(--surface-2)}
+.ico{flex:0 0 auto;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:1.15rem;line-height:1;color:var(--accent);background:var(--accent-soft)}
+.ico svg{width:28px;height:28px}
 .ico.ini{font-size:.74rem;font-weight:600;letter-spacing:.03em;color:var(--accent);background:var(--accent-soft)}
 .rv-cfg{background:var(--surface);border:1px solid var(--line);border-radius:12px}
 .rv-cfg-tit{padding:12px 14px;font-weight:500}
@@ -370,8 +371,14 @@ html.hoja-on,html.hoja-on body{overflow:hidden}
 .h-op.sel{background:var(--accent-soft)}
 .h-op.sel .h-nom{color:var(--accent);font-weight:600}
 .h-nom{flex:1 1 auto;min-width:0;font-size:.92rem;line-height:1.3}
-.h-n{flex:0 0 auto;font-family:var(--mono);font-size:.76rem;font-variant-numeric:tabular-nums;color:var(--muted);background:var(--surface-2);border-radius:999px;padding:2px 9px;min-width:30px;text-align:center}
-.h-op.sel .h-n{background:var(--surface);color:var(--accent)}
+.h-n{flex:0 0 auto;font-family:var(--mono);font-size:.76rem;font-weight:500;font-variant-numeric:tabular-nums;color:#fff;background:#d93a32;border-radius:999px;padding:2px 9px;min-width:30px;text-align:center}
+.h-n.neutro{font-weight:400;color:var(--muted);background:var(--surface-2)}
+.h-op.sel .h-n.neutro{background:var(--surface);color:var(--accent)}
+.rv-elegir.chico{padding:6px 12px 6px 6px;border-radius:10px;gap:10px;min-width:220px;max-width:320px}
+.rv-elegir.chico .ico{width:30px;height:30px;border-radius:8px}
+.rv-elegir.chico .ico svg{width:22px;height:22px}
+.rv-elegir.chico b{font-size:.92rem}
+.f .rv-elegir .ico{color:var(--accent);letter-spacing:0}
 .h-ok{flex:0 0 auto;font-size:.8rem;color:var(--ok);background:var(--ok-soft);border-radius:999px;padding:2px 9px}
 .rv-cfg fieldset{border:0;border-top:1px solid var(--line);margin:0;padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px 18px}
 .rv-cfg legend{float:left;width:100%;padding:0;margin-bottom:4px;font-size:.74rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
@@ -832,17 +839,19 @@ function renderFiltros(){
   btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filtros'+(n?' <b>'+n+'</b>':'')+'<i aria-hidden="true">'+(abierto?'▴':'▾')+'</i>';
   var panel=document.createElement('div'); panel.className='fpanel'; panel.hidden=!abierto;
   sel.forEach(function(l){ panel.appendChild(l); });
-  var fijos=cont.querySelectorAll('label.fijo');
+  var fijos=cont.querySelectorAll('.fijo');
   if(fijos.length) fijos[fijos.length-1].after(btn); else cont.prepend(btn);
   cont.appendChild(panel);
 }
 function armarFiltros(){
   if(state.cmpModo){
     var cb=TODOS.filter(function(p){ return enQue(p, state.cmpQue); }), cn=visibles().length;
-    $('filters').innerHTML='<label class="f fijo"><span>Clasificación</span><select class="ancho" data-cmpque>'+opcionesClases(state.cmpQue)+'</select></label>'+
+    var cqi=state.cmpQue.indexOf('|'), cql=state.cmpQue.slice(0,cqi), cqc=state.cmpQue.slice(cqi+1);
+    $('filters').innerHTML='<div class="f fijo"><span>Clasificación</span><button class="rv-elegir chico" data-hoja-abrir="comparar" aria-haspopup="dialog">'+
+        iconoHtml({linea:cql, cat:cqc})+'<b>'+esc(cqc)+'</b><i aria-hidden="true">▾</i></button></div>'+
       selectFiltro('proveedor','Proveedor',cb)+
       (Object.keys(state.filtros).length?'<button class="clear" data-clear>Quitar filtros</button>':'')+
-      '<span class="res">'+(cn===1?'1 modelo':cn.toLocaleString('es-MX')+' modelos')+' · marca la casilla de los que quieras poner lado a lado (también los de las páginas web)</span>'+
+      '<span class="res">'+(cn===1?'1 modelo':cn.toLocaleString('es-MX')+' modelos')+' · marca la casilla de los que quieras poner lado a lado (también los propios)</span>'+
       (state.q?'<button class="clear" data-clearq>Borrar búsqueda</button>':'');
     return;
   }
@@ -1033,18 +1042,51 @@ function opcionesProv(){
 }
 // ---- Lista para escoger qué revisar (hoja que sube desde abajo; en computadora, ventana al centro) ----
 // La lista nativa del celular no se puede arreglar (letra, dibujos), por eso es propia.
+// Dibujos propios (líneas, 32×32) con la forma de cada vehículo. Se pueden repetir entre clasificaciones.
+var SVG_ICONOS={
+  motocarro:'<circle cx="7" cy="24" r="3"/><circle cx="24" cy="24" r="3"/><path d="M7 24l3-11M8 13h4M10 19h4M14 20v-8h15v8zM10 24h11"/>',
+  mototaxi:'<path d="M6 12c4-5 16-6 22-3v12M8 12l-2 9M4 21h24M18 15h6v6"/><circle cx="8" cy="24" r="3"/><circle cx="23" cy="24" r="3"/>',
+  atv:'<circle cx="8" cy="23" r="4"/><circle cx="24" cy="23" r="4"/><path d="M3 17h26l-2-3H5zM12 14l2-5M12 9h4M16 12h7"/>',
+  buggy:'<circle cx="7" cy="24" r="3.5"/><circle cx="25" cy="24" r="3.5"/><path d="M3 20h26M9 20l3-10h9l4 10M16 10v10"/>',
+  utv:'<circle cx="8" cy="24" r="3.5"/><circle cx="24" cy="24" r="3.5"/><path d="M3 20v-4h26v4zM8 16l3-8h10l3 8M16 8v8M22 12h7v4"/>',
+  moto:'<circle cx="7" cy="22" r="4.5"/><circle cx="25" cy="22" r="4.5"/><path d="M7 22l4-11M9 11h4M11 15l4-3h5l3 3zM13 15v4h7l2-4M20 19l5 3"/>',
+  scooter:'<circle cx="7" cy="24" r="3"/><circle cx="25" cy="24" r="3"/><path d="M8 21h15l2 3M10 21L8 7M5 7h6"/>',
+  triciclo:'<circle cx="7" cy="23" r="4"/><circle cx="24" cy="23" r="4"/><path d="M7 23l3-14M8 9h4M10 16h8l6 7M15 11h5M18 11v5M20 12h8v5h-8z"/>',
+  pickup:'<circle cx="8" cy="23" r="3"/><circle cx="24" cy="23" r="3"/><path d="M3 21v-5l3-5h8v5h15v5zM9 11v5"/>',
+  silla:'<circle cx="13" cy="21" r="6"/><circle cx="25" cy="25" r="2"/><path d="M9 6h2v10h9l3 7M11 16v-4"/>',
+  llave:'<path d="M21 4a6 6 0 0 0-5 8L5 23l4 4 11-11a6 6 0 0 0 8-5l-4 1-3-3 1-4z"/>',
+  montacargas:'<path d="M9 4v21M9 25H3M9 19h3M12 22V14h2V7h8l3 7h2v8z"/><circle cx="15" cy="25" r="2.5"/><circle cx="24" cy="25" r="2.5"/>',
+  montacargasTT:'<path d="M9 4v19M9 23H3M9 17h3M12 20V12h2V5h8l3 7h2v8z"/><circle cx="15" cy="24" r="3.5"/><circle cx="24" cy="24" r="3.5"/>',
+  telescopico:'<circle cx="9" cy="24" r="3.5"/><circle cx="24" cy="24" r="3.5"/><path d="M3 20h26v-5H18v-5h-6v5H3zM14 13L28 5M28 5v6h3"/>',
+  patin:'<path d="M5 4l6 16M3 6l4-2M11 20h18v3H11z"/><circle cx="13" cy="26" r="1.6"/><circle cx="27" cy="26" r="1.6"/>',
+  apiladora:'<path d="M18 4v22M18 17h11M18 26h10M7 14h11v11H7zM7 14L4 6M2 7l4-2"/><circle cx="10" cy="27" r="2"/>',
+  tijera:'<path d="M5 22h22v3H5zM7 21l18-6M7 15l18 6M7 15l18-6M7 9l18 6M4 9h24M5 9V4M27 9V4M5 4h22"/><circle cx="8" cy="27" r="1.8"/><circle cx="24" cy="27" r="1.8"/>',
+  mesa:'<path d="M4 13h24v3H4zM4 25h24M7 24l18-8M7 16l18 8M12 13V9h8v4"/>',
+  grua:'<path d="M3 6h26M14 6v3M18 6v3M12 9h8v6h-8zM16 15v6M16 21v3a3 3 0 1 1-3 3"/>',
+  excavadora:'<path d="M5 22h13a3 3 0 0 1 0 6H5a3 3 0 0 1 0-6zM4 22v-6h7v-6h6v12M17 14l7-8 4 9M28 15l-4 4 4 1z"/>',
+  retro:'<circle cx="9" cy="24" r="3.5"/><circle cx="22" cy="24" r="3.5"/><path d="M6 20h20v-4h-5v-6h-6v6H6zM6 17H3v5l3-1M26 16l3-8 2 7M31 15l-3 3"/>',
+  minicargador:'<circle cx="10" cy="24" r="3"/><circle cx="21" cy="24" r="3"/><path d="M7 21V11h12l3 10zM19 13l6 4M25 13v8l4-2v-6z"/>',
+  cargador:'<circle cx="9" cy="24" r="4"/><circle cx="23" cy="24" r="4"/><path d="M4 19h16v-5h-2V7h-7v7H4zM20 16l6 3M26 14l4 1-1 7-4-2z"/>',
+  dumper:'<path d="M5 22h16a3 3 0 0 1 0 6H5a3 3 0 0 1 0-6zM4 13h14l-3 8H6zM18 16h5v6M23 16l4-6M25 9h4"/>',
+  tractor:'<circle cx="9" cy="22" r="6"/><circle cx="25" cy="24" r="3.5"/><path d="M6 15V6h8l2 9h12v5M16 15h-2M21 15v-4"/>'
+};
 var ICONOS=[
-  [/^ALZATOR\|Pat[ií]n$/,'📦'],[/Apiladora/,'📦'],[/Montacargas/,'🏭'],[/Gr[uú]as|polipasto/i,'🪝'],
-  [/Plataforma/,'🪜'],[/Mesa elevadora/,'⬆️'],[/Miniexcavadora|Excavadora|Retroexcavadora/,'🏗️'],
-  [/Minicargador|Cargador frontal/,'🚜'],[/Minidumper/,'🚚'],[/Tractor/,'🚜'],
-  [/Motocarro|Mototaxi/,'🛺'],[/Cuatrimoto de carga|pickup/i,'🛻'],[/ATV|Cuatrimoto/,'🏍️'],[/Go kart|Arenero/,'🏎️'],
-  [/UTV|Raizer/,'🚙'],[/Minimoto|Motocicleta/,'🏍️'],[/Scooter|City Coco/,'🛴'],[/Triciclo/,'🚲'],
-  [/Silla de ruedas/,'🦼'],[/Refacci/,'🔧']
+  [/^ALZATOR\|Pat[ií]n$/,'patin'],[/Apiladora/,'apiladora'],[/telesc/i,'telescopico'],[/todo terreno/i,'montacargasTT'],
+  [/Montacargas/,'montacargas'],[/Gr[uú]as|polipasto/i,'grua'],[/Plataforma/,'tijera'],[/Mesa elevadora/,'mesa'],
+  [/Retroexcavadora/,'retro'],[/Excavadora|Miniexcavadora/,'excavadora'],[/Minicargador/,'minicargador'],
+  [/Cargador frontal|trascavo/i,'cargador'],[/Minidumper/,'dumper'],[/Tractor/,'tractor'],
+  [/Motocarro/,'motocarro'],[/Mototaxi/,'mototaxi'],[/pickup/i,'pickup'],[/ATV|Cuatrimoto/,'atv'],
+  [/Go kart|Arenero/,'buggy'],[/UTV|Raizer/,'utv'],[/Minimoto|Motocicleta/,'moto'],[/Scooter|City Coco/,'scooter'],
+  [/Triciclo/,'triciclo'],[/Silla de ruedas/,'silla'],[/Refacci/,'llave']
 ];
 function iconoClase(linea, cat){
   var k=linea+'|'+cat;
   for(var i=0;i<ICONOS.length;i++){ if(ICONOS[i][0].test(k)) return ICONOS[i][1]; }
-  return '•';
+  return '';
+}
+function svgIcono(clave){
+  var d=SVG_ICONOS[clave];
+  return d ? '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>' : '';
 }
 function iniciales(t){
   return String(t).replace(/\(.*?\)/g,'').split(/\s+/).filter(Boolean).slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
@@ -1055,16 +1097,28 @@ function selActual(){
 }
 function iconoHtml(o){
   if(o.prov!==undefined) return '<span class="ico ini">'+esc(iniciales(o.prov)||'?')+'</span>';
-  return '<span class="ico">'+iconoClase(o.linea, o.cat)+'</span>';
+  return '<span class="ico">'+svgIcono(iconoClase(o.linea, o.cat))+'</span>';
 }
-function filaHoja(valor, nombre, n, ico, sel){
+function filaHoja(valor, nombre, n, ico, sel, neutro){
   return '<button class="h-op'+(sel?' sel':'')+'" data-hoja-val="'+esc(valor)+'"'+(sel?' aria-current="true"':'')+'>'+ico+
     '<span class="h-nom">'+esc(nombre)+'</span>'+
-    (n ? '<span class="h-n">'+n+'</span>' : '<span class="h-ok" title="Todo revisado">✓</span>')+'</button>';
+    (neutro ? '<span class="h-n neutro">'+n+'</span>' : n ? '<span class="h-n" title="Faltan por revisar">'+n+'</span>' : '<span class="h-ok" title="Todo revisado">✓</span>')+'</button>';
 }
-function abrirHoja(){
-  var porProv=RCFG.por==='proveedor', html='';
-  if(porProv){
+// tipo: 'revisar' (qué revisar; número en rojo = faltan) o 'comparar' (clasificación; número = cuántos modelos hay).
+var HOJA_TIPO='revisar';
+function abrirHoja(tipo){
+  HOJA_TIPO=tipo==='comparar'?'comparar':'revisar';
+  var porProv=HOJA_TIPO==='revisar' && RCFG.por==='proveedor', html='', sub='El número en rojo es lo que falta por revisar';
+  if(HOJA_TIPO==='comparar'){
+    sub='El número es cuántos modelos hay (proveedores y propios)';
+    Object.keys(D.categorias).forEach(function(l){
+      var cats={}; TODOS.forEach(function(p){ if(p.linea===l) cats[p.categoria]=(cats[p.categoria]||0)+1; });
+      var orden=[]; Object.keys(D.categorias[l]).forEach(function(fa){ Object.keys(D.categorias[l][fa]).forEach(function(c){ if(cats[c]) orden.push(c); }); });
+      Object.keys(cats).forEach(function(c){ if(orden.indexOf(c)<0) orden.push(c); });
+      var filas=orden.map(function(c){ var v=l+'|'+c; return filaHoja(v, c, cats[c], iconoHtml({linea:l, cat:c}), v===state.cmpQue, true); }).join('');
+      if(filas) html+='<div class="h-grupo"><div class="h-tit-grupo">'+esc(l)+'</div>'+filas+'</div>';
+    });
+  } else if(porProv){
     var pp=pendientesPorProv(), todos={};
     D.productos.forEach(function(p){ todos[p.proveedor]=1; });
     html='<div class="h-grupo">'+Object.keys(todos).sort(function(a,b){ return a.localeCompare(b,'es'); }).map(function(v){
@@ -1085,7 +1139,7 @@ function abrirHoja(){
   h.innerHTML='<div class="hoja-fondo" data-hoja-cerrar></div>'+
     '<div class="hoja-caja" role="dialog" aria-modal="true" aria-label="'+(porProv?'Escoger proveedor':'Escoger clasificación')+'">'+
       '<div class="hoja-asa" aria-hidden="true"></div>'+
-      '<div class="hoja-cab"><b>'+(porProv?'Proveedor':'Clasificación')+'</b><span>El número es lo que falta por revisar</span>'+
+      '<div class="hoja-cab"><b>'+(porProv?'Proveedor':'Clasificación')+'</b><span>'+sub+'</span>'+
         '<button class="hoja-x" data-hoja-cerrar aria-label="Cerrar">✕</button></div>'+
       '<div class="hoja-lista">'+html+'</div></div>';
   h.hidden=false; document.documentElement.classList.add('hoja-on');
@@ -1097,9 +1151,14 @@ function cerrarHoja(){
   setTimeout(function(){ if(!h.classList.contains('abierta')){ h.hidden=true; h.innerHTML=''; } }, 220);
 }
 document.addEventListener('click',function(e){
-  if(e.target.closest('[data-hoja-abrir]')){ abrirHoja(); return; }
+  var ab=e.target.closest('[data-hoja-abrir]'); if(ab){ abrirHoja(ab.getAttribute('data-hoja-abrir')); return; }
   if(e.target.closest('[data-hoja-cerrar]')){ cerrarHoja(); return; }
   var o=e.target.closest('[data-hoja-val]'); if(!o) return;
+  if(HOJA_TIPO==='comparar'){
+    state.cmpQue=o.getAttribute('data-hoja-val'); state.filtros={};
+    var cps=visibles(); state.sel=cps.length?cps[0].id:null; if(state.vista!=='comparar') state.vista='ficha';
+    cerrarHoja(); render(); return;
+  }
   if(RCFG.por==='proveedor') RCFG.prov=o.getAttribute('data-hoja-val'); else state.revQue=o.getAttribute('data-hoja-val');
   state.revActual=null; guardarRcfg(); cerrarHoja(); renderDetail();
 });
@@ -1117,7 +1176,7 @@ function vistaInicioRevisar(){
   return '<div class="mazo rv"><div class="mz-top"><button class="mz-salir" data-mz-salir>‹ Listas</button><b class="mz-titulo">Revisar</b></div>'+
     '<div class="rv-ini">'+
       '<div class="rv-campo"><span>'+(porProv?'Proveedor':'Clasificación')+'</span>'+
-        '<button class="rv-elegir" data-hoja-abrir aria-haspopup="dialog">'+iconoHtml(selActual())+
+        '<button class="rv-elegir" data-hoja-abrir="revisar" aria-haspopup="dialog">'+iconoHtml(selActual())+
           '<b>'+esc(nombreSeleccion()||'Escoger…')+'</b><i aria-hidden="true">▾</i></button></div>'+
       '<div class="rv-cfg"><div class="rv-cfg-tit">⚙ Configuración</div>'+
         '<fieldset><legend>Revisar por</legend>'+
@@ -1247,7 +1306,7 @@ function renderMenu(){
   $('menu').innerHTML=
     '<button class="opc" data-ir="revisar"><i>♥</i><b>Revisar</b><span>Califica los modelos uno por uno: izquierda no, derecha me gusta.</span>'+(np?'<em>'+np+(np===1?' nuevo':' nuevos')+'</em>':'')+'</button>'+
     '<button class="opc" data-ir="catalogo"><i>▦</i><b>Catálogo</b><span>Todos los productos por línea y tipo, con filtros, favoritos y los propios (páginas web).</span><em>'+D.productos.length.toLocaleString('es-MX')+' productos</em></button>'+
-    '<button class="opc" data-ir="comparar"><i>⇆</i><b>Comparar</b><span>Escoge una clasificación y pon modelos lado a lado, también contra los de las páginas web.</span>'+(state.comp.length?'<em>'+state.comp.length+' marcados</em>':'')+'</button>';
+    '<button class="opc" data-ir="comparar"><i>⇆</i><b>Comparar</b><span>Escoge una clasificación y pon modelos lado a lado, también contra los propios.</span>'+(state.comp.length?'<em>'+state.comp.length+' marcados</em>':'')+'</button>';
 }
 function verPaginas(){
   borrarBusqueda(); state.pag=true; state.fav=false; state.rev=false; state.cmpModo=false; state.modo='catalogo'; state.filtros={};
