@@ -88,6 +88,8 @@ h1{margin:0;font-size:1.6rem;font-weight:600;letter-spacing:-.015em;line-height:
   border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .12s ease,border-color .12s ease}
 .fams button:hover{color:var(--fg)}
 .fams button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.fams .fam-propios{margin-left:auto;position:relative}
+.fams .fam-propios::before{content:"";position:absolute;left:-2px;top:9px;bottom:10px;border-left:1px solid var(--line)}
 .tipos{display:flex;flex-wrap:wrap;gap:6px}
 .tipo{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);
   font-size:.88rem;color:var(--muted);transition:background-color .12s ease,border-color .12s ease,color .12s ease}
@@ -601,14 +603,21 @@ function familias(){
     }).filter(function(t){ return t.n; });
     if(tipos.length) out.push({fam:fam, tipos:tipos});
   });
+  // Al final, "Propios": los productos de la página de esa línea (sunldemexico.com / alzator.com.mx).
+  var orden=[]; Object.keys(cats).forEach(function(fam){ orden=orden.concat(Object.keys(cats[fam])); });
+  var pc={}; PAGINAS.forEach(function(p){ if(p.linea===state.linea) pc[p.categoria]=(pc[p.categoria]||0)+1; });
+  var tp=Object.keys(pc).sort(function(a,b){ var x=orden.indexOf(a), y=orden.indexOf(b); return (x<0?999:x)-(y<0?999:y) || a.localeCompare(b,'es'); })
+    .map(function(c){ return {cat:c, n:pc[c]}; });
+  if(tp.length) out.push({fam:FAM_PROPIOS, tipos:tp, propio:true});
   return out;
 }
+var FAM_PROPIOS='Propios';
 function camposDe(cat){
   var cats=D.categorias[state.linea]||{};
   for(var fam in cats){ if(cats[fam][cat]) return cats[fam][cat]; }
   return [];
 }
-function enCategoria(){ return D.productos.filter(function(p){ return p.linea===state.linea && p.categoria===state.cat; }); }
+function enCategoria(){ return (state.propio?PAGINAS:D.productos).filter(function(p){ return p.linea===state.linea && p.categoria===state.cat; }); }
 function textoDe(p){
   var a=p.atributos||{};
   return [p.nombre,p.modelo,p.proveedor,p.categoria,p.familia,p.linea].concat(Object.keys(a).map(function(k){ return vacio(a[k])?'':a[k]; })).join(' ');
@@ -660,7 +669,7 @@ function visibles(){
   if(state.fav) return favoritosBase().filter(pasaFiltros).sort(porLineaTipo);
   if(state.q){
     var ws=palabras(state.q);
-    return D.productos.filter(function(p){ return coincide(p, ws); }).sort(porLineaTipo);
+    return TODOS.filter(function(p){ return coincide(p, ws); }).sort(porLineaTipo);
   }
   return enCategoria().filter(pasaFiltros).sort(porPrecio);
 }
@@ -679,11 +688,10 @@ function resumen(p){
 
 function renderLineas(){
   $('lineas').innerHTML=Object.keys(D.categorias).map(function(l){
-    var n=D.productos.filter(function(p){ return p.linea===l; }).length;
+    var n=TODOS.filter(function(p){ return p.linea===l; }).length;
     return '<button role="tab" data-linea="'+l+'" aria-selected="'+(!mixta() && state.linea===l)+'">'+l+' <span class="n">'+n+'</span></button>';
   }).join('')+
-  '<button role="tab" data-favs aria-selected="'+state.fav+'"><span class="star-i">★</span> Favoritos <span class="n">'+nFav()+'</span></button>'+
-  (PAGINAS.length?'<button role="tab" data-pag aria-selected="'+state.pag+'">Páginas web <span class="n">'+PAGINAS.length+'</span></button>':'');
+  '<button role="tab" data-favs aria-selected="'+state.fav+'"><span class="star-i">★</span> Favoritos <span class="n">'+nFav()+'</span></button>';
 }
 function renderCats(){
   if(state.rev){
@@ -695,14 +703,17 @@ function renderCats(){
   }
   if(state.fav || state.pag){ $('cats').innerHTML=''; return; }
   // Una fila de pestañas con las familias y, debajo, solo los tipos de la familia elegida.
-  var fs=familias(), actual=fs.filter(function(f){ return f.tipos.some(function(t){ return t.cat===state.cat; }); })[0] || fs[0];
+  var fs=familias(), actual=fs.filter(function(f){ return !!f.propio===!!state.propio && f.tipos.some(function(t){ return t.cat===state.cat; }); })[0] || fs[0];
   if(!actual){ $('cats').innerHTML=''; return; }
   $('cats').innerHTML='<div class="fams" role="tablist" aria-label="Familia">'+fs.map(function(f){
-      return '<button role="tab" data-fam="'+esc(f.fam)+'" aria-selected="'+(f===actual)+'">'+esc(f.fam)+'</button>';
+      return '<button role="tab" data-fam="'+esc(f.fam)+'"'+(f.propio?' class="fam-propios"':'')+' aria-selected="'+(f===actual)+'">'+esc(f.fam)+'</button>';
     }).join('')+'</div>'+
     '<div class="tipos">'+actual.tipos.map(function(t){
-      return '<button class="tipo" data-cat="'+esc(t.cat)+'" aria-pressed="'+(!mixta() && state.cat===t.cat)+'">'+esc(t.cat)+' <span class="n">'+t.n+'</span></button>';
+      return '<button class="tipo" data-cat="'+esc(t.cat)+'"'+(actual.propio?' data-propio':'')+' aria-pressed="'+(!mixta() && state.cat===t.cat && !!state.propio===!!actual.propio)+'">'+esc(t.cat)+' <span class="n">'+t.n+'</span></button>';
     }).join('')+'</div>';
+  // En celular la fila se desliza: que se vea la familia elegida.
+  var fr=$('cats').querySelector('.fams'), fb=fr.querySelector('[aria-selected="true"]');
+  if(fb && fr.scrollWidth>fr.clientWidth) fr.scrollLeft=fb.offsetLeft-16;
 }
 function selectFiltro(k, lbl, base){
   var vals={};
@@ -808,7 +819,7 @@ function renderList(){
         '<span class="item-name">'+esc(p.nombre)+'</span>'+
         '<span class="item-side"><b>'+esc(dinero(p))+'</b>'+esc(p.incoterm||'')+
           (fechaPrecio(p)?'<small class="fp">al '+esc(fechaPrecio(p))+'</small>':'')+'</span>'+
-        '<span class="item-sub">'+(mixta()?'<span class="item-cat">'+esc(p.linea)+' · '+esc(p.categoria)+'</span>':'')+esc(p.proveedor)+(resumen(p)?' · '+esc(resumen(p)):'')+extraRev+'</span>'+
+        '<span class="item-sub">'+(mixta()?'<span class="item-cat">'+esc(p.linea)+' · '+(esPagina(p)?'Propios · ':'')+esc(p.categoria)+'</span>':'')+esc(p.proveedor)+(resumen(p)?' · '+esc(resumen(p)):'')+extraRev+'</span>'+
       '</button>'+
       '<button class="star" data-fav-id="'+esc(p.id)+'" aria-pressed="'+!!FAV[p.id]+'" aria-label="'+(FAV[p.id]?'Quitar de favoritos':'Agregar a favoritos')+'" title="'+(FAV[p.id]?'Quitar de favoritos':'Agregar a favoritos')+'">'+(FAV[p.id]?'★':'☆')+'</button>'+
       '<button class="pick" data-pick="'+esc(p.id)+'" aria-pressed="'+cmp+'" aria-label="Comparar '+esc(p.nombre)+'" title="Comparar"><i></i></button>'+
@@ -1018,8 +1029,8 @@ function render(){
 }
 
 function borrarBusqueda(){ state.q=''; $('q').value=''; }
-function elegirCategoria(cat){
-  borrarBusqueda(); state.fav=false; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='catalogo'; state.cat=cat; state.filtros={};
+function elegirCategoria(cat, propio){
+  borrarBusqueda(); state.fav=false; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='catalogo'; state.cat=cat; state.propio=!!propio; state.filtros={};
   var ps=visibles(); state.sel=ps.length?ps[0].id:null;
   if(state.vista!=='comparar') state.vista='ficha';
 }
@@ -1051,7 +1062,7 @@ function renderMenu(){
   var np=nPendientes();
   $('menu').innerHTML=
     '<button class="opc" data-ir="revisar"><i>♥</i><b>Revisar</b><span>Califica los modelos uno por uno: izquierda no, derecha me gusta.</span>'+(np?'<em>'+np+(np===1?' nuevo':' nuevos')+'</em>':'')+'</button>'+
-    '<button class="opc" data-ir="catalogo"><i>▦</i><b>Catálogo</b><span>Todos los productos por línea y tipo, con filtros, favoritos y las páginas web.</span><em>'+D.productos.length.toLocaleString('es-MX')+' productos</em></button>'+
+    '<button class="opc" data-ir="catalogo"><i>▦</i><b>Catálogo</b><span>Todos los productos por línea y tipo, con filtros, favoritos y los propios (páginas web).</span><em>'+D.productos.length.toLocaleString('es-MX')+' productos</em></button>'+
     '<button class="opc" data-ir="comparar"><i>⇆</i><b>Comparar</b><span>Escoge una clasificación y pon modelos lado a lado, también contra los de las páginas web.</span>'+(state.comp.length?'<em>'+state.comp.length+' marcados</em>':'')+'</button>';
 }
 function verPaginas(){
@@ -1187,10 +1198,10 @@ $('cats').addEventListener('click',function(e){
   var fm=e.target.closest('[data-fam]');
   if(fm){
     var f=familias().filter(function(x){ return x.fam===fm.getAttribute('data-fam'); })[0];
-    if(f){ elegirCategoria(f.tipos[0].cat); state.animate=true; $('main').setAttribute('data-show','list'); render(); }
+    if(f){ elegirCategoria(f.tipos[0].cat, f.propio); state.animate=true; $('main').setAttribute('data-show','list'); render(); }
     return;
   }
-  var b=e.target.closest('[data-cat]'); if(!b) return; elegirCategoria(b.getAttribute('data-cat')); state.animate=true; $('main').setAttribute('data-show','list'); render(); });
+  var b=e.target.closest('[data-cat]'); if(!b) return; elegirCategoria(b.getAttribute('data-cat'), b.hasAttribute('data-propio')); state.animate=true; $('main').setAttribute('data-show','list'); render(); });
 $('filters').addEventListener('change',function(e){
   var cq=e.target.closest('[data-cmpque]');
   if(cq){ state.cmpQue=cq.value; state.filtros={}; var cps=visibles(); state.sel=cps.length?cps[0].id:null; if(state.vista!=='comparar') state.vista='ficha'; render(); return; }
@@ -1201,7 +1212,7 @@ $('filters').addEventListener('change',function(e){
   renderFiltros(); renderList();
 });
 $('filters').addEventListener('click',function(e){
-  if(e.target.closest('[data-clearq]')){ if(state.fav || state.pag || state.rev || state.cmpModo){ borrarBusqueda(); renderFiltros(); renderList(); } else { elegirCategoria(state.cat); render(); } return; }
+  if(e.target.closest('[data-clearq]')){ if(state.fav || state.pag || state.rev || state.cmpModo){ borrarBusqueda(); renderFiltros(); renderList(); } else { elegirCategoria(state.cat, state.propio); render(); } return; }
   if(e.target.closest('[data-ftoggle]')){ state.filtrosAbiertos=!state.filtrosAbiertos; renderFiltros(); return; }
   if(e.target.closest('[data-clear]')){ state.filtros={}; renderFiltros(); renderList(); } });
 $('list').addEventListener('click',function(e){
