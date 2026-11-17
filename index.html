@@ -217,6 +217,21 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
 .lnk{font-size:.8rem;font-weight:500;color:var(--accent)}
 .lnk[hidden]{display:none}
 
+/* Menú de inicio y modos (data-modo en .app: menu, catalogo, revisar, comparar) */
+.menu{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.app[data-modo="menu"] .menu{display:grid}
+.app[data-modo="menu"] #lineas,.app[data-modo="menu"] #cats,.app[data-modo="menu"] #filters,.app[data-modo="menu"] #main{display:none}
+.app[data-modo="revisar"] #lineas,.app[data-modo="comparar"] #lineas,.app[data-modo="comparar"] #cats{display:none}
+.opc{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px 20px;
+  transition:border-color .15s ease,transform .15s ease,box-shadow .15s ease}
+.opc:hover{border-color:var(--accent);box-shadow:0 6px 20px rgba(0,0,0,.06)}
+.opc:active{transform:scale(.98)}
+.opc i{font-style:normal;font-size:1.6rem;line-height:1;color:var(--accent)}
+.opc b{font-size:1.2rem;font-weight:600}
+.opc span{color:var(--muted);font-size:.9rem}
+.opc em{font-style:normal;align-self:flex-start;font-size:.78rem;font-weight:500;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:2px 10px}
+.f select.ancho{max-width:320px}
+
 /* Revisar: una tarjeta a la vez; izquierda = no, derecha = me gusta, botón = tal vez */
 .rev-i{color:var(--accent)}
 .badge{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:500;border-radius:999px;padding:2px 9px;white-space:nowrap}
@@ -255,6 +270,13 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
 .card-head h2{font-size:1.2rem}
 .card-head .price b{font-size:2rem;font-weight:600;color:var(--accent);line-height:1.15}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
+.ch-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ch-fecha{font-size:.78rem;font-weight:500;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:2px 9px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.card-head .price{flex-wrap:nowrap;min-width:0}
+.card-head .price b{white-space:nowrap}
+.card-head .price .mon{font-size:.5em;font-weight:500;margin-right:4px;letter-spacing:.02em}
+.ch-modelo{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:auto;font-size:.9rem;color:var(--fg);background:var(--surface-2);border-radius:6px;padding:2px 8px}
+.card-specs dd.nd{color:var(--faint)}
 .card-specs{grid-column:2;overflow-y:auto;overscroll-behavior:contain;padding:4px 20px 18px}
 .card-specs dl{margin:0;display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:0 14px}
 .card-specs dt,.card-specs dd{margin:0;padding:8px 0;border-bottom:1px solid var(--line);font-size:.9rem}
@@ -284,6 +306,8 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
 
 @media (max-width:820px){
   .main{grid-template-columns:minmax(0,1fr)}
+  .menu{grid-template-columns:minmax(0,1fr)}
+  .opc{padding:18px}
   /* En celular la tarjeta ocupa toda la pantalla */
   html.mazo-on,html.mazo-on body{overflow:hidden}
   .main[data-vista="mazo"] .detail{display:block}
@@ -339,6 +363,7 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
       <div class="tags">
         <span class="tag" id="origen">Cargando…</span>
         <button class="lnk" id="subir" hidden>Subir datos de esta computadora</button>
+        <button class="lnk" id="ir-menu" hidden>‹ Menú</button>
         <button class="lnk" id="salir">Salir</button>
       </div>
     </div>
@@ -348,6 +373,7 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
     </label>
   </header>
 
+  <nav class="menu" id="menu" aria-label="Menú"></nav>
   <div class="seg" role="tablist" aria-label="Línea" id="lineas"></div>
   <nav class="cats" id="cats" aria-label="Tipo de producto"></nav>
   <div class="filters" id="filters"></div>
@@ -398,11 +424,13 @@ var FAV = {};  // id → true; se guardan en Supabase (catalogo.favoritos)
 var TODOS = [], PAGINAS = [];
 function esPagina(p){ return /\(p[aá]gina web\)\s*$/i.test(p.proveedor||''); }
 function separarPaginas(){
+  FILAS_CACHE={};
   TODOS=D.productos;
   PAGINAS=TODOS.filter(esPagina);
   D.productos=TODOS.filter(function(p){ return !esPagina(p); });
 }
 state.pag=false;
+state.modo='menu'; state.cmpQue='';
 function paginasBase(){
   var ws=state.q?palabras(state.q):null;
   return PAGINAS.filter(function(p){ return !ws || coincide(p, ws); });
@@ -588,6 +616,10 @@ function revisadosBase(){
   return D.productos.filter(function(p){ return m[p.id] && m[p.id].decision===state.revSub && (!ws || coincide(p, ws)); });
 }
 function visibles(){
+  if(state.cmpModo){
+    var wc=state.q?palabras(state.q):null;
+    return TODOS.filter(function(p){ return enQue(p, state.cmpQue) && (!wc || coincide(p, wc)); }).filter(pasaFiltros).sort(porPrecio);
+  }
   if(state.pag) return paginasBase().filter(pasaFiltros).sort(porLineaTipo);
   if(state.rev) return state.revSub==='pendientes' ? [] : revisadosBase().filter(pasaFiltros).sort(porLineaTipo);
   if(state.fav) return favoritosBase().filter(pasaFiltros).sort(porLineaTipo);
@@ -616,7 +648,6 @@ function renderLineas(){
     return '<button role="tab" data-linea="'+l+'" aria-selected="'+(!mixta() && state.linea===l)+'">'+l+' <span class="n">'+n+'</span></button>';
   }).join('')+
   '<button role="tab" data-favs aria-selected="'+state.fav+'"><span class="star-i">★</span> Favoritos <span class="n">'+nFav()+'</span></button>'+
-  '<button role="tab" data-rev aria-selected="'+state.rev+'"><span class="rev-i">♥</span> Revisar <span class="n">'+nPendientes()+'</span></button>'+
   (PAGINAS.length?'<button role="tab" data-pag aria-selected="'+state.pag+'">Páginas web <span class="n">'+PAGINAS.length+'</span></button>':'');
 }
 function renderCats(){
@@ -647,7 +678,29 @@ function selectFiltro(k, lbl, base){
       return '<option value="'+esc(v)+'"'+(state.filtros[k]===v?' selected':'')+'>'+esc(valor(vals[v]))+'</option>';
     }).join('')+'</select></label>';
 }
+function opcionesClases(sel){
+  var html='';
+  Object.keys(D.categorias).forEach(function(l){
+    var cats={}; TODOS.forEach(function(p){ if(p.linea===l) cats[p.categoria]=(cats[p.categoria]||0)+1; });
+    var orden=[]; Object.keys(D.categorias[l]).forEach(function(f){ Object.keys(D.categorias[l][f]).forEach(function(c){ if(cats[c]) orden.push(c); }); });
+    Object.keys(cats).forEach(function(c){ if(orden.indexOf(c)<0) orden.push(c); });
+    if(!orden.length) return;
+    html+='<optgroup label="'+esc(l)+'">'+orden.map(function(c){
+      var v=l+'|'+c; return '<option value="'+esc(v)+'"'+(sel===v?' selected':'')+'>'+esc(c)+' ('+cats[c]+')</option>';
+    }).join('')+'</optgroup>';
+  });
+  return html;
+}
 function renderFiltros(){
+  if(state.cmpModo){
+    var cb=TODOS.filter(function(p){ return enQue(p, state.cmpQue); }), cn=visibles().length;
+    $('filters').innerHTML='<label class="f"><span>Clasificación</span><select class="ancho" data-cmpque>'+opcionesClases(state.cmpQue)+'</select></label>'+
+      selectFiltro('proveedor','Proveedor',cb)+
+      (Object.keys(state.filtros).length?'<button class="clear" data-clear>Quitar filtros</button>':'')+
+      '<span class="res">'+(cn===1?'1 modelo':cn.toLocaleString('es-MX')+' modelos')+' · marca la casilla de los que quieras poner lado a lado (también los de las páginas web)</span>'+
+      (state.q?'<button class="clear" data-clearq>Borrar búsqueda</button>':'');
+    return;
+  }
   if(state.pag){
     var pb=paginasBase(), pn=visibles().length;
     $('filters').innerHTML=selectFiltro('linea','Página',pb)+selectFiltro('categoria','Tipo',pb)+
@@ -776,23 +829,52 @@ function extrasDe(p){
   return String(p.notas).split(/(?<=\.)\s+|;\s+/).filter(function(f){ return RE_EXTRAS.test(f); })
     .map(function(f){ return f.replace(/^Opciones con costo extra en el Excel:\s*/i,'').replace(/[.;]\s*$/,''); }).join('; ');
 }
+// Filas de la tarjeta: las MISMAS y en el MISMO orden para todos los de una clasificación.
+// Primero las características de la clasificación (CATEGORIAS de build_catalogo.py), luego las demás que use
+// algún producto de esa clasificación (las más comunes primero). Lo que un producto no trae sale con "/".
+var FILAS_CACHE={};
+function camposDeP(p){
+  var cats=D.categorias[p.linea]||{};
+  for(var fam in cats){ if(cats[fam][p.categoria]) return cats[fam][p.categoria]; }
+  return [];
+}
+function filasDe(p){
+  var k=p.linea+'|'+p.categoria;
+  if(FILAS_CACHE[k]) return FILAS_CACHE[k];
+  var grupo=D.productos.filter(function(q){ return q.linea===p.linea && q.categoria===p.categoria; });
+  var base=camposDeP(p), cuenta={};
+  grupo.forEach(function(q){ var a=q.atributos||{}; Object.keys(a).forEach(function(x){ if(base.indexOf(x)<0 && !vacio(a[x])) cuenta[x]=(cuenta[x]||0)+1; }); });
+  var otros=Object.keys(cuenta).sort(function(x,y){ return (cuenta[y]-cuenta[x]) || etiqueta(x).localeCompare(etiqueta(y),'es'); });
+  var filas=[{l:'Proveedor', v:function(q){ return q.proveedor; }}];
+  base.concat(otros).forEach(function(x){ filas.push({l:etiqueta(x), v:function(q){ return (q.atributos||{})[x]; }}); });
+  [['Piezas por 40HQ','piezas_40hq'],['Medidas (mm)','medidas_mm'],['Empaque','empaque']].forEach(function(c){
+    if(grupo.some(function(q){ return !vacio(q[c[1]]); })) filas.push({l:c[0], v:function(q){ return q[c[1]]; }});
+  });
+  if(grupo.some(function(q){ return extrasDe(q); })) filas.push({l:'Extras', v:extrasDe});
+  return (FILAS_CACHE[k]=filas);
+}
+// "EXW Wuxi" -> "EXW", "FOB Ningbo" -> "FOB"; si no empieza con un incoterm se deja como viene.
+function incotermCorto(t){
+  var m=String(t||'').match(/^\s*(EXW|FOB|FCA|CIF|CFR|CPT|CIP|DAP|DPU|DDP|FAS)\b/i);
+  return m ? m[1].toUpperCase() : (t||'');
+}
+// Precio de la tarjeta con la moneda en chico ("USD" pequeño y el número grande).
+function precioGrande(p){
+  var t=dinero(p), m=t.match(/^([A-Z]{3})\s*(.+)$/);
+  return m ? '<small class="mon">'+esc(m[1])+'</small>'+esc(m[2]) : esc(t);
+}
 function tarjeta(p){
-  var a=p.atributos||{}, campos=camposDe(p.categoria);
-  var extra=Object.keys(a).filter(function(k){ return campos.indexOf(k)<0 && !vacio(a[k]); });
-  var filas=[['Proveedor', p.proveedor]].concat(campos.concat(extra).filter(function(k){ return !vacio(a[k]); }).map(function(k){ return [etiqueta(k), a[k]]; }));
-  if(p.piezas_40hq) filas.push(['Piezas por 40HQ', p.piezas_40hq]);
-  if(p.medidas_mm) filas.push(['Medidas (mm)', p.medidas_mm]);
-  if(p.empaque) filas.push(['Empaque', p.empaque]);
-  if(extrasDe(p)) filas.push(['Extras', extrasDe(p)]);
   var url=p.foto && FOTO[p.foto], m=mias()[p.id];
   return '<article class="card entra" id="card" data-id="'+esc(p.id)+'">'+
     '<div class="card-ph">'+(url?'<a class="ph si" href="'+esc(url)+'" target="_blank" rel="noopener" title="Ver la foto en grande" draggable="false"><img src="'+esc(url)+'" alt="Foto de '+esc(p.nombre)+'" draggable="false"></a>':foto(p,''))+'</div>'+
-    '<div class="card-head"><span class="eyebrow">'+esc(p.linea)+' · '+esc(p.categoria)+'</span><h2>'+esc(p.nombre)+'</h2>'+
-      '<div class="price"><b>'+esc(dinero(p))+'</b><span>'+esc(p.incoterm||'')+'</span>'+(fechaPrecio(p)?'<span class="fp-tag">al '+esc(fechaPrecio(p))+'</span>':'')+'</div>'+
-      (p.modelo?'<div class="facts"><span>Modelo <b class="code">'+esc(p.modelo)+'</b></span></div>':'')+
+    '<div class="card-head">'+
+      '<div class="ch-top"><span class="eyebrow">'+esc(p.linea)+' · '+esc(p.categoria)+'</span>'+(fechaPrecio(p)?'<span class="ch-fecha">'+esc(fechaPrecio(p))+'</span>':'')+'</div>'+
+      '<div class="price"><b>'+precioGrande(p)+'</b><span>'+esc(incotermCorto(p.incoterm))+'</span>'+(p.modelo?'<span class="ch-modelo code">'+esc(p.modelo)+'</span>':'')+'</div>'+
+      '<h2>'+esc(p.nombre)+'</h2>'+
       '<div class="chips">'+chipsCambio(p)+contexto(p)+(m?badgeDec(m.decision):'')+'</div></div>'+
-    '<div class="card-specs"><dl>'+filas.map(function(f){ return '<dt>'+esc(f[0])+'</dt><dd>'+esc(valor(f[1]))+'</dd>'; }).join('')+'</dl>'+
-      (p.archivo?'<div class="src">Fuente: '+esc(p.archivo)+'</div>':'')+
+    '<div class="card-specs"><dl>'+filasDe(p).map(function(f){
+        var v=f.v(p); return '<dt>'+esc(f.l)+'</dt><dd'+(vacio(v)?' class="nd">/':'>'+esc(valor(v)))+'</dd>';
+      }).join('')+'</dl>'+
       '<label>Comentario (opcional)<textarea id="mz-com" rows="2" placeholder="Ej.: pedir precio CIF, preguntar garantía">'+esc(m && m.comentario || '')+'</textarea></label></div>'+
     '<span class="sello s-si">ME GUSTA</span><span class="sello s-no">NO</span><span class="sello s-tal">TAL VEZ</span>'+
   '</article>';
@@ -868,16 +950,20 @@ function renderDetail(){
 }
 function renderBar(){
   var n=state.comp.length;
-  $('bar').hidden = n===0 || (state.rev && state.revSub==='pendientes') || (state.vista==='comparar' && $('main').getAttribute('data-show')==='detail');
+  $('bar').hidden = n===0 || state.modo==='menu' || (state.rev && state.revSub==='pendientes') || (state.vista==='comparar' && $('main').getAttribute('data-show')==='detail');
   $('bar-n').textContent = n===1 ? '1 para comparar' : n+' para comparar';
   $('bar-go').disabled = n<2;
   $('bar-go').style.opacity = n<2 ? '.5' : '1';
 }
-function render(){ renderLineas(); renderCats(); renderFiltros(); renderList(); renderDetail(); renderBar(); }
+function render(){
+  $('app').setAttribute('data-modo', state.modo); $('ir-menu').hidden = state.modo==='menu';
+  if(state.modo==='menu'){ renderMenu(); document.documentElement.classList.remove('mazo-on'); renderBar(); return; }
+  renderLineas(); renderCats(); renderFiltros(); renderList(); renderDetail(); renderBar();
+}
 
 function borrarBusqueda(){ state.q=''; $('q').value=''; }
 function elegirCategoria(cat){
-  borrarBusqueda(); state.fav=false; state.rev=false; state.pag=false; state.cat=cat; state.filtros={};
+  borrarBusqueda(); state.fav=false; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='catalogo'; state.cat=cat; state.filtros={};
   var ps=visibles(); state.sel=ps.length?ps[0].id:null;
   if(state.vista!=='comparar') state.vista='ficha';
 }
@@ -888,17 +974,37 @@ function elegirLinea(l){
 function mostrar(vista){ state.vista=vista; state.animate=true; $('main').setAttribute('data-show','detail'); if(esCelular.matches) window.scrollTo(0,0); }
 function nFav(){ return TODOS.filter(function(p){ return FAV[p.id]; }).length; }
 function verFavoritos(){
-  borrarBusqueda(); state.fav=true; state.rev=false; state.pag=false; state.filtros={};
+  borrarBusqueda(); state.fav=true; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='catalogo'; state.filtros={};
   var ps=visibles(); state.sel=ps.length?ps[0].id:null;
   if(state.vista!=='comparar') state.vista='ficha';
 }
+// Comparar: una clasificación con TODOS sus modelos (proveedores y páginas web) para marcar y poner lado a lado.
+function verComparar(){
+  borrarBusqueda(); state.cmpModo=true; state.fav=false; state.rev=false; state.pag=false; state.modo='comparar'; state.filtros={};
+  if(!state.cmpQue || !TODOS.some(function(p){ return enQue(p, state.cmpQue); })){
+    var p0=producto(state.comp[0]) || TODOS.filter(function(p){ return p.linea===state.linea && p.categoria===state.cat; })[0] || TODOS[0];
+    state.cmpQue = p0 ? p0.linea+'|'+p0.categoria : '';
+  }
+  var ps=visibles(); state.sel=ps.length?ps[0].id:null; state.vista='ficha';
+}
+function irMenu(){
+  borrarBusqueda(); state.modo='menu'; state.rev=false; state.fav=false; state.pag=false; state.cmpModo=false; state.filtros={};
+  $('main').setAttribute('data-show','list');
+}
+function renderMenu(){
+  var np=nPendientes();
+  $('menu').innerHTML=
+    '<button class="opc" data-ir="revisar"><i>♥</i><b>Revisar</b><span>Califica los modelos uno por uno: izquierda no, derecha me gusta.</span>'+(np?'<em>'+np+(np===1?' nuevo':' nuevos')+'</em>':'')+'</button>'+
+    '<button class="opc" data-ir="catalogo"><i>▦</i><b>Catálogo</b><span>Todos los productos por línea y tipo, con filtros, favoritos y las páginas web.</span><em>'+D.productos.length.toLocaleString('es-MX')+' productos</em></button>'+
+    '<button class="opc" data-ir="comparar"><i>⇆</i><b>Comparar</b><span>Escoge una clasificación y pon modelos lado a lado, también contra los de las páginas web.</span>'+(state.comp.length?'<em>'+state.comp.length+' marcados</em>':'')+'</button>';
+}
 function verPaginas(){
-  borrarBusqueda(); state.pag=true; state.fav=false; state.rev=false; state.filtros={};
+  borrarBusqueda(); state.pag=true; state.fav=false; state.rev=false; state.cmpModo=false; state.modo='catalogo'; state.filtros={};
   var ps=visibles(); state.sel=ps.length?ps[0].id:null;
   if(state.vista!=='comparar') state.vista='ficha';
 }
 function verRevisar(sub){
-  borrarBusqueda(); state.rev=true; state.fav=false; state.pag=false; state.filtros={}; state.revSub=sub;
+  borrarBusqueda(); state.rev=true; state.fav=false; state.pag=false; state.cmpModo=false; state.modo='revisar'; state.filtros={}; state.revSub=sub;
   if(!state.revDe || !USUARIOS.some(function(u){ return u.id===state.revDe; })){
     // Si yo no he calificado nada pero otra cuenta sí, se muestran las de esa cuenta.
     var conDec=USUARIOS.filter(function(u){ return Object.keys(DEC[u.id]||{}).length; });
@@ -1005,6 +1111,15 @@ function alternar(id){
   if(state.vista==='comparar' && !state.comp.length) state.vista='ficha';
 }
 
+$('menu').addEventListener('click',function(e){
+  var b=e.target.closest('[data-ir]'); if(!b) return;
+  var a=b.getAttribute('data-ir');
+  if(a==='revisar'){ verRevisar('pendientes'); $('main').setAttribute('data-show', esCelular.matches?'detail':'list'); }
+  else if(a==='comparar'){ verComparar(); $('main').setAttribute('data-show','list'); }
+  else { elegirLinea(state.linea); $('main').setAttribute('data-show','list'); }
+  state.animate=true; render(); window.scrollTo(0,0);
+});
+$('ir-menu').addEventListener('click',function(){ irMenu(); render(); window.scrollTo(0,0); });
 $('lineas').addEventListener('click',function(e){
   if(e.target.closest('[data-pag]')){ verPaginas(); state.animate=true; $('main').setAttribute('data-show','list'); render(); return; }
   if(e.target.closest('[data-rev]')){ verRevisar('pendientes'); state.animate=true; $('main').setAttribute('data-show', esCelular.matches?'detail':'list'); render(); return; }
@@ -1015,6 +1130,8 @@ $('cats').addEventListener('click',function(e){
   if(rs){ verRevisar(rs.getAttribute('data-rsub')); state.animate=true; $('main').setAttribute('data-show', rs.getAttribute('data-rsub')==='pendientes'?'detail':'list'); render(); return; }
   var b=e.target.closest('[data-cat]'); if(!b) return; elegirCategoria(b.getAttribute('data-cat')); state.animate=true; $('main').setAttribute('data-show','list'); render(); });
 $('filters').addEventListener('change',function(e){
+  var cq=e.target.closest('[data-cmpque]');
+  if(cq){ state.cmpQue=cq.value; state.filtros={}; var cps=visibles(); state.sel=cps.length?cps[0].id:null; if(state.vista!=='comparar') state.vista='ficha'; render(); return; }
   var rd=e.target.closest('[data-revde]');
   if(rd){ state.revDe=rd.value; state.filtros={}; var ps=visibles(); state.sel=ps.length?ps[0].id:null; render(); return; }
   var s=e.target.closest('[data-f]'); if(!s) return;
@@ -1022,7 +1139,7 @@ $('filters').addEventListener('change',function(e){
   renderFiltros(); renderList();
 });
 $('filters').addEventListener('click',function(e){
-  if(e.target.closest('[data-clearq]')){ if(state.fav || state.pag || state.rev){ borrarBusqueda(); renderFiltros(); renderList(); } else { elegirCategoria(state.cat); render(); } return; }
+  if(e.target.closest('[data-clearq]')){ if(state.fav || state.pag || state.rev || state.cmpModo){ borrarBusqueda(); renderFiltros(); renderList(); } else { elegirCategoria(state.cat); render(); } return; }
   if(e.target.closest('[data-clear]')){ state.filtros={}; renderFiltros(); renderList(); } });
 $('list').addEventListener('click',function(e){
   var fv=e.target.closest('[data-fav-id]'); if(fv){ alternarFav(fv.getAttribute('data-fav-id')); return; }
@@ -1068,8 +1185,9 @@ $('bar-no').addEventListener('click',function(){ state.comp=[]; if(state.vista==
 $('q').addEventListener('input',function(){
   state.q=this.value.trim();
   // En la tarjeta no se busca: escribir manda a la búsqueda general.
-  if(state.rev && state.revSub==='pendientes'){ state.rev=false; state.vista='ficha'; $('main').setAttribute('data-show','list'); }
-  if(!state.fav && !state.rev && !state.pag) state.filtros={};
+  if((state.rev && state.revSub==='pendientes') || state.modo==='menu'){ state.rev=false; state.modo='catalogo'; state.vista='ficha'; $('main').setAttribute('data-show','list'); }
+  if(!state.fav && !state.rev && !state.pag && !state.cmpModo) state.filtros={};
+  $('app').setAttribute('data-modo', state.modo); $('ir-menu').hidden = state.modo==='menu';
   renderLineas(); renderCats(); renderFiltros(); renderList(); renderDetail(); renderBar();
 });
 // Teclado en la tarjeta: ← no, → me gusta, ↓ tal vez, Retroceso o Z = deshacer.
@@ -1084,7 +1202,7 @@ document.addEventListener('keydown',function(e){
 // ---- Sesión y datos ----
 var arrancado=false;
 function arrancar(){
-  if(!arrancado){ elegirLinea(Object.keys(D.categorias)[0]); arrancado=true; }
+  if(!arrancado){ elegirLinea(Object.keys(D.categorias)[0]); irMenu(); arrancado=true; }
   else if(!D.categorias[state.linea]) elegirLinea(Object.keys(D.categorias)[0]);
   render();
 }
@@ -1121,7 +1239,7 @@ $('login-form').addEventListener('submit',function(e){
   });
 });
 $('salir').addEventListener('click',function(){
-  sb.auth.signOut().then(function(){ D={categorias:{},etiquetas:{},productos:[]}; FAV={}; DEC={}; HIST={}; DESHACER=[]; YO=null; TODOS=[]; PAGINAS=[]; state.fav=false; state.rev=false; state.pag=false; state.revDe=null; arrancado=false; state.comp=[]; verLogin(); });
+  sb.auth.signOut().then(function(){ D={categorias:{},etiquetas:{},productos:[]}; FAV={}; DEC={}; HIST={}; DESHACER=[]; YO=null; TODOS=[]; PAGINAS=[]; state.fav=false; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='menu'; state.revDe=null; arrancado=false; state.comp=[]; verLogin(); });
 });
 
 // Solo en la computadora (localhost): si existe datos/productos.json (lo genera build_catalogo.py),
