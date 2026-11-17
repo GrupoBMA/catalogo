@@ -106,6 +106,16 @@ h1{margin:0;font-size:1.6rem;font-weight:600;letter-spacing:-.015em;line-height:
 /* Filtros por característica */
 .filters{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-end}
 .filters:empty{display:none}
+.fbtn{display:inline-flex;align-items:center;gap:7px;font-weight:500;font-size:.9rem;color:var(--fg);background:var(--surface);
+  border:1px solid var(--line);border-radius:8px;padding:6px 12px;transition:border-color .12s ease}
+.fbtn:hover{border-color:var(--accent)}
+.fbtn svg{width:15px;height:15px;color:var(--muted)}
+.fbtn b{font-weight:600;font-size:.75rem;color:var(--surface);background:var(--accent);border-radius:999px;min-width:18px;padding:0 5px;text-align:center}
+.fbtn i{font-style:normal;color:var(--faint);font-size:.8rem}
+.fbtn.on{border-color:var(--accent)}
+.fpanel{flex-basis:100%;display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-end;padding:12px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r)}
+.fpanel[hidden]{display:none}
 .f{display:flex;flex-direction:column;gap:3px;min-width:0}
 .f span{font-size:.72rem;color:var(--muted);letter-spacing:.02em}
 .f select{color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 28px 6px 10px;
@@ -720,10 +730,27 @@ function opcionesClases(sel){
   });
   return html;
 }
+// Los filtros por característica van escondidos detrás de un botón "Filtros" (con cuántos hay puestos),
+// para que la pantalla no abrume. Clasificación (Comparar) y Decisiones de (Revisar) siempre se ven.
+state.filtrosAbiertos=false;
 function renderFiltros(){
+  armarFiltros();
+  var cont=$('filters'), sel=[].slice.call(cont.querySelectorAll('label.f:not(.fijo)'));
+  if(!sel.length) return;
+  var n=Object.keys(state.filtros).length, abierto=state.filtrosAbiertos;
+  var btn=document.createElement('button');
+  btn.className='fbtn'+(n?' on':''); btn.setAttribute('data-ftoggle',''); btn.setAttribute('aria-expanded', abierto);
+  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filtros'+(n?' <b>'+n+'</b>':'')+'<i aria-hidden="true">'+(abierto?'▴':'▾')+'</i>';
+  var panel=document.createElement('div'); panel.className='fpanel'; panel.hidden=!abierto;
+  sel.forEach(function(l){ panel.appendChild(l); });
+  var fijos=cont.querySelectorAll('label.fijo');
+  if(fijos.length) fijos[fijos.length-1].after(btn); else cont.prepend(btn);
+  cont.appendChild(panel);
+}
+function armarFiltros(){
   if(state.cmpModo){
     var cb=TODOS.filter(function(p){ return enQue(p, state.cmpQue); }), cn=visibles().length;
-    $('filters').innerHTML='<label class="f"><span>Clasificación</span><select class="ancho" data-cmpque>'+opcionesClases(state.cmpQue)+'</select></label>'+
+    $('filters').innerHTML='<label class="f fijo"><span>Clasificación</span><select class="ancho" data-cmpque>'+opcionesClases(state.cmpQue)+'</select></label>'+
       selectFiltro('proveedor','Proveedor',cb)+
       (Object.keys(state.filtros).length?'<button class="clear" data-clear>Quitar filtros</button>':'')+
       '<span class="res">'+(cn===1?'1 modelo':cn.toLocaleString('es-MX')+' modelos')+' · marca la casilla de los que quieras poner lado a lado (también los de las páginas web)</span>'+
@@ -741,7 +768,7 @@ function renderFiltros(){
   if(state.rev){
     if(state.revSub==='pendientes'){ $('filters').innerHTML=''; return; }
     var rb=revisadosBase(), rn=visibles().length;
-    var quien=USUARIOS.length>1 ? '<label class="f"><span>Decisiones de</span><select data-revde>'+USUARIOS.map(function(u){
+    var quien=USUARIOS.length>1 ? '<label class="f fijo"><span>Decisiones de</span><select data-revde>'+USUARIOS.map(function(u){
       return '<option value="'+esc(u.id)+'"'+(u.id===state.revDe?' selected':'')+'>'+esc(u.nombre)+(u.id===YO?' (tú)':'')+'</option>';
     }).join('')+'</select></label>' : '';
     $('filters').innerHTML=quien+selectFiltro('categoria','Tipo',rb)+selectFiltro('proveedor','Proveedor',rb)+
@@ -1175,6 +1202,7 @@ $('filters').addEventListener('change',function(e){
 });
 $('filters').addEventListener('click',function(e){
   if(e.target.closest('[data-clearq]')){ if(state.fav || state.pag || state.rev || state.cmpModo){ borrarBusqueda(); renderFiltros(); renderList(); } else { elegirCategoria(state.cat); render(); } return; }
+  if(e.target.closest('[data-ftoggle]')){ state.filtrosAbiertos=!state.filtrosAbiertos; renderFiltros(); return; }
   if(e.target.closest('[data-clear]')){ state.filtros={}; renderFiltros(); renderList(); } });
 $('list').addEventListener('click',function(e){
   var fv=e.target.closest('[data-fav-id]'); if(fv){ alternarFav(fv.getAttribute('data-fav-id')); return; }
