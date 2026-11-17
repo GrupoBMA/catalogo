@@ -130,7 +130,7 @@ h1{margin:0;font-size:1.6rem;font-weight:600;letter-spacing:-.015em;line-height:
 /* Fotos (fondo blanco también en modo oscuro: las fotos de catálogo vienen sobre blanco) */
 .ph{display:grid;place-items:center;overflow:hidden;border-radius:8px;background:var(--surface-2);color:var(--faint);
   font-size:.68rem;line-height:1.2;text-align:center}
-.ph.si{background:#fff;border:1px solid var(--line)}
+.ph.si{background:#fff;border:1px solid var(--line);display:block}  /* block: así la foto se ajusta al alto y se ve completa */
 .ph img{width:100%;height:100%;object-fit:contain;display:block}
 .ph-ficha{width:100%;aspect-ratio:4 / 3;max-height:360px;font-size:.85rem;padding:0}
 a.ph-ficha{cursor:zoom-in}
