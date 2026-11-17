@@ -399,7 +399,7 @@ var YO = null, USUARIOS = [], DESHACER = [];
 var NOMBRE_DEC = {si:'Me gusta', tal_vez:'Tal vez', no:'No me gusta'};
 var ICONO_DEC = {si:'♥', tal_vez:'?', no:'✕'};
 var CLASE_DEC = {si:'si', tal_vez:'tal', no:'no'};
-state.rev=false; state.revSub='pendientes'; state.revQue='novedades'; state.revDe=null; state.revActual=null;
+state.rev=false; state.revSub='pendientes'; state.revQue=''; state.revDe=null; state.revActual=null;
 
 function mias(){ return DEC[YO] || (DEC[YO]={}); }
 function cambioDe(id){
@@ -412,12 +412,29 @@ function pendiente(p){
   return !d || (c && Date.parse(d.actualizado) < Date.parse(c));
 }
 function esNovedad(p){ return !!HIST[p.id]; }
+// Las tarjetas salen de una sola clasificación a la vez (state.revQue = 'LINEA|Clasificación').
 function enQue(p, que){
-  if(que==='novedades') return esNovedad(p);
   var i=que.indexOf('|'); return p.linea===que.slice(0,i) && p.categoria===que.slice(i+1);
 }
+// Pendientes por clasificación: cuántos faltan y cuántos de ellos son nuevos (o cambiaron de precio).
+function pendientesPorClase(){
+  var out={};
+  D.productos.forEach(function(p){
+    if(!pendiente(p)) return;
+    var k=p.linea+'|'+p.categoria, o=out[k]||(out[k]={n:0, nuevos:0});
+    o.n++; if(esNovedad(p)) o.nuevos++;
+  });
+  return out;
+}
+// Al entrar: la primera clasificación con nuevos; si no hay, la primera con pendientes.
+function queInicial(){
+  var pc=pendientesPorClase(), ks=[];
+  Object.keys(D.categorias).forEach(function(l){ Object.keys(D.categorias[l]).forEach(function(f){ Object.keys(D.categorias[l][f]).forEach(function(c){ ks.push(l+'|'+c); }); }); });
+  return ks.filter(function(k){ return pc[k] && pc[k].nuevos; })[0] || ks.filter(function(k){ return pc[k]; })[0] || ks[0] || '';
+}
+function porNuevoPrecio(a,b){ return (esNovedad(b)-esNovedad(a)) || porPrecio(a,b); }
 function mazo(){
-  var ps=D.productos.filter(function(p){ return enQue(p, state.revQue) && pendiente(p); }).sort(porLineaTipo);
+  var ps=D.productos.filter(function(p){ return enQue(p, state.revQue) && pendiente(p); }).sort(porNuevoPrecio);
   if(state.revActual){
     var i=ps.map(function(p){ return p.id; }).indexOf(state.revActual);
     if(i>0) ps.unshift(ps.splice(i,1)[0]);
@@ -706,14 +723,19 @@ function calificaciones(p){
 }
 
 // ---- Tarjeta de Revisar ----
+// Lista desplegable de clasificaciones (agrupadas por línea), con los nuevos de cada una.
 function opcionesQue(){
-  var html='<option value="novedades"'+(state.revQue==='novedades'?' selected':'')+'>Novedades ('+nPendientes()+')</option>';
+  var pc=pendientesPorClase(), html='';
   Object.keys(D.categorias).forEach(function(l){
-    var cats={}; D.productos.forEach(function(p){ if(p.linea===l && pendiente(p)) cats[p.categoria]=(cats[p.categoria]||0)+1; });
-    var ks=Object.keys(cats).sort(function(a,b){ return a.localeCompare(b,'es'); });
-    if(!ks.length) return;
-    html+='<optgroup label="'+esc(l)+' · por tipo">'+ks.map(function(c){
-      var v=l+'|'+c; return '<option value="'+esc(v)+'"'+(state.revQue===v?' selected':'')+'>'+esc(c)+' ('+cats[c]+')</option>';
+    var cats=[];
+    Object.keys(D.categorias[l]).forEach(function(f){ Object.keys(D.categorias[l][f]).forEach(function(c){
+      if(D.productos.some(function(p){ return p.linea===l && p.categoria===c; })) cats.push(c);
+    }); });
+    if(!cats.length) return;
+    html+='<optgroup label="'+esc(l)+'">'+cats.map(function(c){
+      var v=l+'|'+c, o=pc[v];
+      var txt = !o ? '✓ revisado' : (o.nuevos ? '● '+o.nuevos+(o.nuevos===1?' nuevo':' nuevos')+' · ' : '')+o.n+' por revisar';
+      return '<option value="'+esc(v)+'"'+(state.revQue===v?' selected':'')+'>'+esc(c)+' — '+txt+'</option>';
     }).join('')+'</optgroup>';
   });
   return html;
@@ -742,13 +764,15 @@ function tarjeta(p){
 function vistaMazo(){
   var ps=mazo(), p=ps[0];
   var top='<div class="mz-top"><button class="mz-salir" data-mz-salir>‹ Listas</button>'+
-    '<select data-mz-que aria-label="Qué revisar">'+opcionesQue()+'</select>'+
+    '<select data-mz-que aria-label="Clasificación">'+opcionesQue()+'</select>'+
     '<span class="mz-n">'+(ps.length===1?'1 por revisar':ps.length+' por revisar')+'</span></div>';
   var area;
   if(p) area=tarjeta(p);
-  else if(state.revQue==='novedades') area='<div class="mz-vacio"><b>No hay novedades por revisar</b>'+
-    '<span>Cuando se suban catálogos o precios nuevos, aparecen aquí.<br>Mientras, puedes revisar cualquier tipo con el menú de arriba.</span></div>';
-  else area='<div class="mz-vacio"><b>Todo revisado ✓</b><span>Ya calificaste todos los productos de este tipo.</span></div>';
+  else {
+    var pc=pendientesPorClase(), otra=Object.keys(pc).filter(function(k){ return pc[k].nuevos; })[0];
+    area='<div class="mz-vacio"><b>Todo revisado ✓</b><span>Ya calificaste todo lo de esta clasificación.'+
+      (otra?'<br>Hay nuevos en otras: escógelas en la lista de arriba (las que dicen ●).':'')+'</span></div>';
+  }
   return '<div class="mazo">'+top+'<div class="mz-area">'+area+'</div>'+
     '<div class="mz-btns">'+
       '<button class="mz-undo" data-mz-undo title="Deshacer la última" aria-label="Deshacer la última"'+(DESHACER.length?'':' disabled')+'>↶</button>'+
@@ -839,6 +863,7 @@ function verRevisar(sub){
     var conDec=USUARIOS.filter(function(u){ return Object.keys(DEC[u.id]||{}).length; });
     state.revDe = Object.keys(mias()).length || !conDec.length ? YO : conDec[0].id;
   }
+  if(sub==='pendientes' && (!state.revQue || !D.productos.some(function(p){ return enQue(p, state.revQue); }))) state.revQue=queInicial();
   if(sub!=='pendientes'){ var ps=visibles(); state.sel=ps.length?ps[0].id:null; if(state.vista!=='comparar') state.vista='ficha'; }
 }
 // Califica un producto: se marca de inmediato y se guarda en Supabase; si falla, se regresa.
