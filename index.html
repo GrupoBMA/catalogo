@@ -247,12 +247,13 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
   touch-action:pan-y;user-select:none;-webkit-user-select:none;will-change:transform}
 .card.entra{animation:cardIn .22s cubic-bezier(.2,.8,.2,1)}
 @keyframes cardIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
-.card-ph{grid-column:1;grid-row:1 / span 2;background:#fff;display:grid;place-items:center;border-right:1px solid var(--line);min-height:0}
-.card-ph .ph{width:100%;height:100%;border-radius:0;border:0;font-size:.9rem}
+.card-ph{grid-column:1;grid-row:1 / span 2;background:#fff;position:relative;border-right:1px solid var(--line);min-height:0}
+.card-ph .ph{position:absolute;inset:0;width:auto;height:auto;border-radius:0;border:0;font-size:.9rem}
+.card-ph .ph.si{display:block}
 .card-ph img{padding:14px;-webkit-user-drag:none}
 .card-head{grid-column:2;padding:18px 20px 12px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line)}
 .card-head h2{font-size:1.2rem}
-.card-head .price b{font-size:1.3rem}
+.card-head .price b{font-size:2rem;font-weight:600;color:var(--accent);line-height:1.15}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .card-specs{grid-column:2;overflow-y:auto;overscroll-behavior:contain;padding:4px 20px 18px}
 .card-specs dl{margin:0;display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:0 14px}
@@ -293,7 +294,8 @@ h3{margin:0;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:
   .mz-top select{flex:1 1 auto}
   .mz-area{flex:1 1 auto;height:auto;min-height:0}
   .card{display:flex;flex-direction:column}
-  .card-ph{flex:0 0 33%;border-right:0;border-bottom:1px solid var(--line)}
+  .card-ph{flex:0 0 25%;border-right:0;border-bottom:1px solid var(--line)}
+  .card-head .price b{font-size:1.75rem}
   .card-ph img{padding:8px}
   .card-head{padding:12px 16px 10px;gap:4px}
   .card-head h2{font-size:1.05rem}
@@ -388,6 +390,23 @@ var FILTRABLES = ['tipo','tipo_plataforma','chasis','tipo_rodado','manejo','acci
 var D = {categorias:{}, etiquetas:{}, productos:[]};
 var state = {linea:'SUNL', cat:null, fav:false, filtros:{}, q:'', sel:null, comp:[], vista:'ficha', animate:false};
 var FAV = {};  // id → true; se guardan en Supabase (catalogo.favoritos)
+
+// ---- Páginas web ----
+// Los productos de sunldemexico.com y alzator.com.mx (proveedor "... (página web)") no van mezclados en el
+// catálogo ni en Revisar: tienen su propio apartado y sirven para comparar contra los de los proveedores.
+// D.productos = solo proveedores; PAGINAS = los de las páginas; TODOS = los dos (para buscar por id, favoritos, fotos).
+var TODOS = [], PAGINAS = [];
+function esPagina(p){ return /\(p[aá]gina web\)\s*$/i.test(p.proveedor||''); }
+function separarPaginas(){
+  TODOS=D.productos;
+  PAGINAS=TODOS.filter(esPagina);
+  D.productos=TODOS.filter(function(p){ return !esPagina(p); });
+}
+state.pag=false;
+function paginasBase(){
+  var ws=state.q?palabras(state.q):null;
+  return PAGINAS.filter(function(p){ return !ws || coincide(p, ws); });
+}
 
 // ---- Revisar ----
 // Cada cuenta califica productos: 'si' (me gusta), 'tal_vez' o 'no'. Se guardan en catalogo.decisiones.
@@ -485,14 +504,14 @@ function fechaPrecio(p){
   var f=String(p.fecha_precio).slice(0,10).split('-');
   return f.length===3 ? f[2]+'/'+f[1]+'/'+f[0] : String(p.fecha_precio);
 }
-function producto(id){ return D.productos.filter(function(p){ return p.id===id; })[0]; }
+function producto(id){ return TODOS.filter(function(p){ return p.id===id; })[0]; }
 
 // ---- Fotos ----
 // Viven en el bucket privado catalogo-fotos de Supabase (solo las ve una cuenta de catalogo.usuarios).
 // Cada producto trae p.foto = nombre del archivo (por contenido). Se piden direcciones firmadas de todas al cargar.
 var BUCKET='catalogo-fotos', FOTO={}, fotosVencen=0;
 function pedirFotos(){
-  var nombres=D.productos.map(function(p){ return p.foto; }).filter(function(f,i,a){ return f && a.indexOf(f)===i; });
+  var nombres=TODOS.map(function(p){ return p.foto; }).filter(function(f,i,a){ return f && a.indexOf(f)===i; });
   if(!nombres.length) return Promise.resolve();
   return sb.storage.from(BUCKET).createSignedUrls(nombres, 6*3600).then(function(r){
     if(r.error) return;
@@ -547,13 +566,13 @@ function porPrecio(a,b){
   var x=vacio(a.precio), y=vacio(b.precio);
   return x!==y ? (x?1:-1) : (x ? 0 : a.precio-b.precio);
 }
-function campo(p,k){ return k==='proveedor' ? p.proveedor : k==='categoria' ? p.categoria : (p.atributos||{})[k]; }
+function campo(p,k){ return k==='proveedor' ? p.proveedor : k==='categoria' ? p.categoria : k==='linea' ? p.linea : (p.atributos||{})[k]; }
 function pasaFiltros(p){
   for(var k in state.filtros){ if(String(campo(p,k))!==state.filtros[k]) return false; }
   return true;
 }
 // Lista con productos de varios tipos (búsqueda o favoritos): se ordena por línea, tipo y precio.
-function mixta(){ return !!(state.q || state.fav || state.rev); }
+function mixta(){ return !!(state.q || state.fav || state.rev || state.pag); }
 function porLineaTipo(a,b){
   var lineas=Object.keys(D.categorias);
   return (lineas.indexOf(a.linea)-lineas.indexOf(b.linea)) || a.categoria.localeCompare(b.categoria,'es') || porPrecio(a,b);
@@ -561,7 +580,7 @@ function porLineaTipo(a,b){
 // Favoritos que coinciden con la búsqueda (sin aplicar los filtros de Tipo y Proveedor).
 function favoritosBase(){
   var ws=state.q?palabras(state.q):null;
-  return D.productos.filter(function(p){ return FAV[p.id] && (!ws || coincide(p, ws)); });
+  return TODOS.filter(function(p){ return FAV[p.id] && (!ws || coincide(p, ws)); });
 }
 // Lista de una calificación (Me gusta / Tal vez / No) de la cuenta elegida en "Decisiones de".
 function revisadosBase(){
@@ -569,6 +588,7 @@ function revisadosBase(){
   return D.productos.filter(function(p){ return m[p.id] && m[p.id].decision===state.revSub && (!ws || coincide(p, ws)); });
 }
 function visibles(){
+  if(state.pag) return paginasBase().filter(pasaFiltros).sort(porLineaTipo);
   if(state.rev) return state.revSub==='pendientes' ? [] : revisadosBase().filter(pasaFiltros).sort(porLineaTipo);
   if(state.fav) return favoritosBase().filter(pasaFiltros).sort(porLineaTipo);
   if(state.q){
@@ -596,7 +616,8 @@ function renderLineas(){
     return '<button role="tab" data-linea="'+l+'" aria-selected="'+(!mixta() && state.linea===l)+'">'+l+' <span class="n">'+n+'</span></button>';
   }).join('')+
   '<button role="tab" data-favs aria-selected="'+state.fav+'"><span class="star-i">★</span> Favoritos <span class="n">'+nFav()+'</span></button>'+
-  '<button role="tab" data-rev aria-selected="'+state.rev+'"><span class="rev-i">♥</span> Revisar <span class="n">'+nPendientes()+'</span></button>';
+  '<button role="tab" data-rev aria-selected="'+state.rev+'"><span class="rev-i">♥</span> Revisar <span class="n">'+nPendientes()+'</span></button>'+
+  (PAGINAS.length?'<button role="tab" data-pag aria-selected="'+state.pag+'">Páginas web <span class="n">'+PAGINAS.length+'</span></button>':'');
 }
 function renderCats(){
   if(state.rev){
@@ -606,7 +627,7 @@ function renderCats(){
     }).join('')+'</div>';
     return;
   }
-  if(state.fav){ $('cats').innerHTML=''; return; }
+  if(state.fav || state.pag){ $('cats').innerHTML=''; return; }
   $('cats').innerHTML=familias().map(function(f){
     return '<div class="fam"><small>'+esc(f.fam)+'</small><div class="fam-row">'+f.tipos.map(function(t){
       return '<button class="cat" data-cat="'+esc(t.cat)+'" aria-pressed="'+(!mixta() && state.cat===t.cat)+'">'+esc(t.cat)+' <span class="n">'+t.n+'</span></button>';
@@ -627,6 +648,14 @@ function selectFiltro(k, lbl, base){
     }).join('')+'</select></label>';
 }
 function renderFiltros(){
+  if(state.pag){
+    var pb=paginasBase(), pn=visibles().length;
+    $('filters').innerHTML=selectFiltro('linea','Página',pb)+selectFiltro('categoria','Tipo',pb)+
+      (Object.keys(state.filtros).length?'<button class="clear" data-clear>Quitar filtros</button>':'')+
+      '<span class="res">'+(pn===1?'1 producto':pn.toLocaleString('es-MX')+' productos')+' de sunldemexico.com y alzator.com.mx'+(state.q?' con “'+esc(state.q)+'”':'')+'</span>'+
+      (state.q?'<button class="clear" data-clearq>Borrar búsqueda</button>':'');
+    return;
+  }
   if(state.rev){
     if(state.revSub==='pendientes'){ $('filters').innerHTML=''; return; }
     var rb=revisadosBase(), rn=visibles().length;
@@ -733,29 +762,36 @@ function opcionesQue(){
     }); });
     if(!cats.length) return;
     html+='<optgroup label="'+esc(l)+'">'+cats.map(function(c){
-      var v=l+'|'+c, o=pc[v];
-      var txt = !o ? '✓ revisado' : (o.nuevos ? '● '+o.nuevos+(o.nuevos===1?' nuevo':' nuevos')+' · ' : '')+o.n+' por revisar';
-      return '<option value="'+esc(v)+'"'+(state.revQue===v?' selected':'')+'>'+esc(c)+' — '+txt+'</option>';
+      // Cerrada solo dice el nombre; al abrirla (mostrarConteos) sale cuántos hay por revisar.
+      var v=l+'|'+c, n=pc[v] ? pc[v].n : 0;
+      return '<option value="'+esc(v)+'" data-nombre="'+esc(c)+'" data-n="'+n+'"'+(state.revQue===v?' selected':'')+'>'+esc(c)+'</option>';
     }).join('')+'</optgroup>';
   });
   return html;
 }
+// De las notas de captura, solo las frases que hablan de extras u opciones (lo demás no sale en la tarjeta).
+var RE_EXTRAS=/extra|opci[oó]n|opciones|opcional|accesorio|ampliable|incluye|se le puede|\+\s?\d[\d,.]*\s?(usd|mxn)/i;
+function extrasDe(p){
+  if(!p.notas) return '';
+  return String(p.notas).split(/(?<=\.)\s+|;\s+/).filter(function(f){ return RE_EXTRAS.test(f); })
+    .map(function(f){ return f.replace(/^Opciones con costo extra en el Excel:\s*/i,'').replace(/[.;]\s*$/,''); }).join('; ');
+}
 function tarjeta(p){
   var a=p.atributos||{}, campos=camposDe(p.categoria);
   var extra=Object.keys(a).filter(function(k){ return campos.indexOf(k)<0 && !vacio(a[k]); });
-  var filas=campos.concat(extra).filter(function(k){ return !vacio(a[k]); }).map(function(k){ return [etiqueta(k), a[k]]; });
+  var filas=[['Proveedor', p.proveedor]].concat(campos.concat(extra).filter(function(k){ return !vacio(a[k]); }).map(function(k){ return [etiqueta(k), a[k]]; }));
   if(p.piezas_40hq) filas.push(['Piezas por 40HQ', p.piezas_40hq]);
   if(p.medidas_mm) filas.push(['Medidas (mm)', p.medidas_mm]);
   if(p.empaque) filas.push(['Empaque', p.empaque]);
+  if(extrasDe(p)) filas.push(['Extras', extrasDe(p)]);
   var url=p.foto && FOTO[p.foto], m=mias()[p.id];
   return '<article class="card entra" id="card" data-id="'+esc(p.id)+'">'+
     '<div class="card-ph">'+(url?'<a class="ph si" href="'+esc(url)+'" target="_blank" rel="noopener" title="Ver la foto en grande" draggable="false"><img src="'+esc(url)+'" alt="Foto de '+esc(p.nombre)+'" draggable="false"></a>':foto(p,''))+'</div>'+
     '<div class="card-head"><span class="eyebrow">'+esc(p.linea)+' · '+esc(p.categoria)+'</span><h2>'+esc(p.nombre)+'</h2>'+
       '<div class="price"><b>'+esc(dinero(p))+'</b><span>'+esc(p.incoterm||'')+'</span>'+(fechaPrecio(p)?'<span class="fp-tag">al '+esc(fechaPrecio(p))+'</span>':'')+'</div>'+
-      '<div class="facts"><span>Proveedor <b>'+esc(p.proveedor)+'</b></span>'+(p.modelo?'<span>Modelo <b class="code">'+esc(p.modelo)+'</b></span>':'')+'</div>'+
+      (p.modelo?'<div class="facts"><span>Modelo <b class="code">'+esc(p.modelo)+'</b></span></div>':'')+
       '<div class="chips">'+chipsCambio(p)+contexto(p)+(m?badgeDec(m.decision):'')+'</div></div>'+
-    '<div class="card-specs"><dl>'+(filas.length?filas.map(function(f){ return '<dt>'+esc(f[0])+'</dt><dd>'+esc(valor(f[1]))+'</dd>'; }).join(''):'<dt>Características</dt><dd class="nd">No indicadas</dd>')+'</dl>'+
-      (p.notas?'<div class="note">'+esc(p.notas)+'</div>':'')+
+    '<div class="card-specs"><dl>'+filas.map(function(f){ return '<dt>'+esc(f[0])+'</dt><dd>'+esc(valor(f[1]))+'</dd>'; }).join('')+'</dl>'+
       (p.archivo?'<div class="src">Fuente: '+esc(p.archivo)+'</div>':'')+
       '<label>Comentario (opcional)<textarea id="mz-com" rows="2" placeholder="Ej.: pedir precio CIF, preguntar garantía">'+esc(m && m.comentario || '')+'</textarea></label></div>'+
     '<span class="sello s-si">ME GUSTA</span><span class="sello s-no">NO</span><span class="sello s-tal">TAL VEZ</span>'+
@@ -841,7 +877,7 @@ function render(){ renderLineas(); renderCats(); renderFiltros(); renderList(); 
 
 function borrarBusqueda(){ state.q=''; $('q').value=''; }
 function elegirCategoria(cat){
-  borrarBusqueda(); state.fav=false; state.rev=false; state.cat=cat; state.filtros={};
+  borrarBusqueda(); state.fav=false; state.rev=false; state.pag=false; state.cat=cat; state.filtros={};
   var ps=visibles(); state.sel=ps.length?ps[0].id:null;
   if(state.vista!=='comparar') state.vista='ficha';
 }
@@ -850,14 +886,19 @@ function elegirLinea(l){
   var f=familias(); elegirCategoria(f.length?f[0].tipos[0].cat:null);
 }
 function mostrar(vista){ state.vista=vista; state.animate=true; $('main').setAttribute('data-show','detail'); if(esCelular.matches) window.scrollTo(0,0); }
-function nFav(){ return D.productos.filter(function(p){ return FAV[p.id]; }).length; }
+function nFav(){ return TODOS.filter(function(p){ return FAV[p.id]; }).length; }
 function verFavoritos(){
-  borrarBusqueda(); state.fav=true; state.rev=false; state.filtros={};
+  borrarBusqueda(); state.fav=true; state.rev=false; state.pag=false; state.filtros={};
+  var ps=visibles(); state.sel=ps.length?ps[0].id:null;
+  if(state.vista!=='comparar') state.vista='ficha';
+}
+function verPaginas(){
+  borrarBusqueda(); state.pag=true; state.fav=false; state.rev=false; state.filtros={};
   var ps=visibles(); state.sel=ps.length?ps[0].id:null;
   if(state.vista!=='comparar') state.vista='ficha';
 }
 function verRevisar(sub){
-  borrarBusqueda(); state.rev=true; state.fav=false; state.filtros={}; state.revSub=sub;
+  borrarBusqueda(); state.rev=true; state.fav=false; state.pag=false; state.filtros={}; state.revSub=sub;
   if(!state.revDe || !USUARIOS.some(function(u){ return u.id===state.revDe; })){
     // Si yo no he calificado nada pero otra cuenta sí, se muestran las de esa cuenta.
     var conDec=USUARIOS.filter(function(u){ return Object.keys(DEC[u.id]||{}).length; });
@@ -965,6 +1006,7 @@ function alternar(id){
 }
 
 $('lineas').addEventListener('click',function(e){
+  if(e.target.closest('[data-pag]')){ verPaginas(); state.animate=true; $('main').setAttribute('data-show','list'); render(); return; }
   if(e.target.closest('[data-rev]')){ verRevisar('pendientes'); state.animate=true; $('main').setAttribute('data-show', esCelular.matches?'detail':'list'); render(); return; }
   if(e.target.closest('[data-favs]')){ verFavoritos(); state.animate=true; $('main').setAttribute('data-show','list'); render(); return; }
   var b=e.target.closest('[data-linea]'); if(!b) return; elegirLinea(b.getAttribute('data-linea')); state.animate=true; $('main').setAttribute('data-show','list'); render(); });
@@ -980,7 +1022,7 @@ $('filters').addEventListener('change',function(e){
   renderFiltros(); renderList();
 });
 $('filters').addEventListener('click',function(e){
-  if(e.target.closest('[data-clearq]')){ if(state.fav){ borrarBusqueda(); renderFiltros(); renderList(); } else { elegirCategoria(state.cat); render(); } return; }
+  if(e.target.closest('[data-clearq]')){ if(state.fav || state.pag || state.rev){ borrarBusqueda(); renderFiltros(); renderList(); } else { elegirCategoria(state.cat); render(); } return; }
   if(e.target.closest('[data-clear]')){ state.filtros={}; renderFiltros(); renderList(); } });
 $('list').addEventListener('click',function(e){
   var fv=e.target.closest('[data-fav-id]'); if(fv){ alternarFav(fv.getAttribute('data-fav-id')); return; }
@@ -989,6 +1031,16 @@ $('list').addEventListener('click',function(e){
   var b=e.target.closest('.item'); if(!b) return;
   state.sel=b.getAttribute('data-id'); mostrar('ficha'); renderList(); renderDetail(); renderBar();
 });
+function mostrarConteos(s, si){
+  [].forEach.call(s.options,function(o){
+    var n=+o.getAttribute('data-n');
+    o.textContent=o.getAttribute('data-nombre')+(si ? (n ? ' ('+n+')' : ' ✓') : '');
+  });
+}
+['pointerdown','focusin'].forEach(function(ev){
+  $('detail').addEventListener(ev,function(e){ var s=e.target.closest && e.target.closest('[data-mz-que]'); if(s) mostrarConteos(s,true); });
+});
+$('detail').addEventListener('focusout',function(e){ var s=e.target.closest && e.target.closest('[data-mz-que]'); if(s) mostrarConteos(s,false); });
 $('detail').addEventListener('change',function(e){
   var q=e.target.closest('[data-mz-que]'); if(!q) return;
   state.revQue=q.value; state.revActual=null; renderDetail();
@@ -1017,7 +1069,7 @@ $('q').addEventListener('input',function(){
   state.q=this.value.trim();
   // En la tarjeta no se busca: escribir manda a la búsqueda general.
   if(state.rev && state.revSub==='pendientes'){ state.rev=false; state.vista='ficha'; $('main').setAttribute('data-show','list'); }
-  if(!state.fav && !state.rev) state.filtros={};
+  if(!state.fav && !state.rev && !state.pag) state.filtros={};
   renderLineas(); renderCats(); renderFiltros(); renderList(); renderDetail(); renderBar();
 });
 // Teclado en la tarjeta: ← no, → me gusta, ↓ tal vez, Retroceso o Z = deshacer.
@@ -1048,12 +1100,13 @@ function cargar(){
       throw r.error;
     }
     D=r.data; if(!D.categorias) D.categorias={}; if(!D.productos) D.productos=[];
+    separarPaginas();
     FAV={}; (D.favoritos||[]).forEach(function(id){ FAV[id]=true; });
     YO=D.yo; USUARIOS=D.usuarios||[]; DEC={}; HIST={};
     (D.decisiones||[]).forEach(function(d){ (DEC[d.user_id]||(DEC[d.user_id]={}))[d.producto_id]=d; });
     (D.historial||[]).forEach(function(h){ HIST[h.producto_id]=h; });
     $('login').hidden=true; $('app').hidden=false;
-    $('origen').textContent=D.productos.length ? D.productos.length.toLocaleString('es-MX')+' productos' : 'Sin datos todavía';
+    $('origen').textContent=TODOS.length ? TODOS.length.toLocaleString('es-MX')+' productos' : 'Sin datos todavía';
     arrancar(); revisarLocal(); pedirFotos();
   }).catch(function(e){ verLogin('No se pudieron cargar los datos: '+(e.message||e)); });
 }
@@ -1068,7 +1121,7 @@ $('login-form').addEventListener('submit',function(e){
   });
 });
 $('salir').addEventListener('click',function(){
-  sb.auth.signOut().then(function(){ D={categorias:{},etiquetas:{},productos:[]}; FAV={}; DEC={}; HIST={}; DESHACER=[]; YO=null; state.fav=false; state.rev=false; state.revDe=null; arrancado=false; state.comp=[]; verLogin(); });
+  sb.auth.signOut().then(function(){ D={categorias:{},etiquetas:{},productos:[]}; FAV={}; DEC={}; HIST={}; DESHACER=[]; YO=null; TODOS=[]; PAGINAS=[]; state.fav=false; state.rev=false; state.pag=false; state.revDe=null; arrancado=false; state.comp=[]; verLogin(); });
 });
 
 // Solo en la computadora (localhost): si existe datos/productos.json (lo genera build_catalogo.py),
@@ -1084,7 +1137,7 @@ function revisarLocal(){
     b.onclick=function(){
       if(!listo){
         listo=true;
-        b.textContent='¿Reemplazar los '+D.productos.length+' de Supabase por los '+j.productos.length+' de esta computadora? Clic otra vez para confirmar';
+        b.textContent='¿Reemplazar los '+TODOS.length+' de Supabase por los '+j.productos.length+' de esta computadora? Clic otra vez para confirmar';
         setTimeout(function(){ if(listo && !b.disabled){ listo=false; b.textContent=texto; } }, 8000);
         return;
       }
