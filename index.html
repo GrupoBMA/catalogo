@@ -1143,11 +1143,15 @@ function abrirHoja(tipo){
         '<button class="hoja-x" data-hoja-cerrar aria-label="Cerrar">✕</button></div>'+
       '<div class="hoja-lista">'+html+'</div></div>';
   h.hidden=false; document.documentElement.classList.add('hoja-on');
+  // Entrada en el historial para que "atrás" cierre la lista en vez de salir de la pantalla.
+  if(!(history.state && history.state.hoja)) history.pushState(Object.assign(navEstado(),{hoja:true}),'');
   requestAnimationFrame(function(){ h.classList.add('abierta'); var s=h.querySelector('.h-op.sel'); if(s) s.scrollIntoView({block:'center'}); });
 }
 function cerrarHoja(){
   var h=$('hoja'); if(h.hidden) return;
   h.classList.remove('abierta'); document.documentElement.classList.remove('hoja-on');
+  // Cerrada desde la app (✕, fondo o al escoger): quitar su entrada del historial.
+  if(!navRestaurando && history.state && history.state.hoja){ navIgnorar=true; history.back(); }
   setTimeout(function(){ if(!h.classList.contains('abierta')){ h.hidden=true; h.innerHTML=''; } }, 220);
 }
 document.addEventListener('click',function(e){
@@ -1523,12 +1527,50 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Backspace' || e.key==='z' || e.key==='Z'){ e.preventDefault(); deshacer(); }
 });
 
+// ---- Botón "atrás" (celular o navegador): regresa a la pantalla anterior de la app ----
+// Cada cambio de pantalla deja una entrada en el historial con una copia del estado; "atrás" la restaura.
+// Dentro de la misma pantalla (filtros, otro producto en la computadora) solo se actualiza la entrada.
+var NAV_CAMPOS=['modo','linea','cat','propio','fav','rev','pag','cmpModo','revSub','revEmpezado','revQue','revDe',
+                'cmpQue','q','sel','vista','filtros','filtrosAbiertos'];
+var navHuella=null, navRestaurando=false, navIgnorar=false;
+function navEstado(){
+  var s={}; NAV_CAMPOS.forEach(function(k){ s[k]=state[k]; });
+  s.filtros=JSON.parse(JSON.stringify(state.filtros||{})); s.show=$('main').getAttribute('data-show')||'list';
+  return s;
+}
+function navPantalla(s){  // lo que cuenta como "otra pantalla" (en computadora la lista y la ficha se ven juntas)
+  var cel=esCelular.matches;
+  return JSON.stringify([s.modo, s.linea, s.cat, s.propio, s.fav, s.rev, s.pag, s.cmpModo, s.revSub, s.revEmpezado,
+    cel ? s.show : null, s.vista, !!s.q, (cel && s.show==='detail') ? s.sel : null]);
+}
+function anotarNav(){
+  if(navRestaurando || navIgnorar || $('app').hidden || !arrancado) return;
+  if(history.state && history.state.hoja) return;  // la lista para escoger está abierta
+  var s=navEstado(), h=navPantalla(s);
+  if(navHuella===null || h===navHuella) history.replaceState(s,''); else history.pushState(s,'');
+  navHuella=h;
+}
+['click','change','input','keyup'].forEach(function(ev){
+  document.addEventListener(ev, function(){ setTimeout(anotarNav,0); }, true);
+});
+window.addEventListener('popstate', function(e){
+  if(navIgnorar){ navIgnorar=false; anotarNav(); return; }      // se cerró la lista para escoger desde la app
+  if(!$('hoja').hidden){ navRestaurando=true; cerrarHoja(); navRestaurando=false; return; }  // "atrás" cierra la lista
+  var s=e.state; if(!s || s.hoja || $('app').hidden || !arrancado) return;
+  navRestaurando=true;
+  NAV_CAMPOS.forEach(function(k){ state[k]=s[k]; });
+  state.filtros=JSON.parse(JSON.stringify(s.filtros||{})); state.animate=false;
+  $('q').value=state.q||''; $('main').setAttribute('data-show', s.show||'list');
+  render(); window.scrollTo(0,0);
+  navHuella=navPantalla(navEstado()); navRestaurando=false;
+});
+
 // ---- Sesión y datos ----
 var arrancado=false;
 function arrancar(){
-  if(!arrancado){ elegirLinea(Object.keys(D.categorias)[0]); irMenu(); arrancado=true; }
+  if(!arrancado){ elegirLinea(Object.keys(D.categorias)[0]); irMenu(); arrancado=true; navHuella=null; }
   else if(!D.categorias[state.linea]) elegirLinea(Object.keys(D.categorias)[0]);
-  render();
+  render(); anotarNav();
 }
 function verLogin(msg){
   $('app').hidden=true; $('login').hidden=false;
