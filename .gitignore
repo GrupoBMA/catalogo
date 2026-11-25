@@ -19,3 +19,4 @@ Comparativos/
 # Fotos de productos (vienen de los catálogos) y su extractor
 Fotos/
 sacar_fotos.py
+guardar_whatsapp.py
