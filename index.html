@@ -575,7 +575,8 @@ function nuevosBase(){
   return TODOS.filter(function(p){ return esReciente(p) && (!ws || coincide(p, ws)); });
 }
 function nNuevos(){ return TODOS.filter(esReciente).length; }
-function porClasePrecio(a,b){ return (ordenClase(a)-ordenClase(b)) || porPrecio(a,b); }
+// Por línea y clasificación en orden alfabético (Supabase no conserva el orden de CATEGORIAS), luego por precio.
+function porClasePrecio(a,b){ return porLineaTipo(a,b); }
 // En Revisar, "Todo lo nuevo" (state.revQue = 'NUEVOS'): todos los nuevos sin calificar, una clasificación tras otra.
 var REV_NUEVOS='NUEVOS';
 // Las tarjetas salen de una sola clasificación a la vez (state.revQue = 'LINEA|Clasificación').
@@ -1093,13 +1094,15 @@ var SVG_ICONOS={
   minicargador:'<circle cx="10" cy="24" r="3"/><circle cx="21" cy="24" r="3"/><path d="M7 21V11h12l3 10zM19 13l6 4M25 13v8l4-2v-6z"/>',
   cargador:'<circle cx="9" cy="24" r="4"/><circle cx="23" cy="24" r="4"/><path d="M4 19h16v-5h-2V7h-7v7H4zM20 16l6 3M26 14l4 1-1 7-4-2z"/>',
   dumper:'<path d="M5 22h16a3 3 0 0 1 0 6H5a3 3 0 0 1 0-6zM4 13h14l-3 8H6zM18 16h5v6M23 16l4-6M25 9h4"/>',
+  trituradora:'<path d="M5 22h18a3 3 0 0 1 0 6H5a3 3 0 0 1 0-6zM7 22V12h10v10M5 8h14l-2 4H7zM17 17h6l5-6M12 16v3"/>',
+  podadora:'<circle cx="8" cy="24" r="4"/><circle cx="24" cy="25" r="3"/><path d="M5 18h22v4M12 18l2-7h6M20 11l2 7M3 28h26"/>',
   tractor:'<circle cx="9" cy="22" r="6"/><circle cx="25" cy="24" r="3.5"/><path d="M6 15V6h8l2 9h12v5M16 15h-2M21 15v-4"/>'
 };
 var ICONOS=[
   [/^ALZATOR\|Pat[ií]n$/,'patin'],[/Apiladora/,'apiladora'],[/telesc/i,'telescopico'],[/todo terreno/i,'montacargasTT'],
   [/Montacargas/,'montacargas'],[/Gr[uú]as|polipasto/i,'grua'],[/Plataforma/,'tijera'],[/Mesa elevadora/,'mesa'],
   [/Retroexcavadora/,'retro'],[/Excavadora|Miniexcavadora/,'excavadora'],[/Minicargador/,'minicargador'],
-  [/Cargador frontal|trascavo/i,'cargador'],[/Minidumper/,'dumper'],[/Tractor/,'tractor'],
+  [/Cargador frontal|trascavo/i,'cargador'],[/Minidumper/,'dumper'],[/Tractor/,'tractor'],[/Trituradora/,'trituradora'],[/Podadora/,'podadora'],
   [/Motocarro/,'motocarro'],[/Mototaxi/,'mototaxi'],[/pickup/i,'pickup'],[/ATV|Cuatrimoto/,'atv'],
   [/Go kart|Arenero/,'buggy'],[/UTV|Raizer/,'utv'],[/Minimoto|Motocicleta/,'moto'],[/Scooter|City Coco/,'scooter'],
   [/Triciclo/,'triciclo'],[/Silla de ruedas/,'silla'],[/Refacci/,'llave']
