@@ -565,7 +565,7 @@ function pendiente(p){
   return !d || (c && Date.parse(d.actualizado) < Date.parse(c));
 }
 function esNovedad(p){ return !!HIST[p.id]; }
-// En Revisar, "Todo lo nuevo" (state.revQue = 'NUEVOS'): todos los nuevos sin calificar, una clasificación tras otra.
+// En Revisar, "Nuevos" (state.revQue = 'NUEVOS'): todos los nuevos sin calificar, una clasificación tras otra.
 var REV_NUEVOS='NUEVOS';
 // Las tarjetas salen de una sola clasificación a la vez (state.revQue = 'LINEA|Clasificación').
 function enQue(p, que){
@@ -1132,7 +1132,7 @@ function abrirHoja(tipo){
     }).join('')+'</div>';
   } else {
     var pc=pendientesPorClase(), nn=D.productos.filter(function(p){ return pasaInco(p) && esNovedad(p) && pendiente(p); }).length;
-    html='<div class="h-grupo">'+filaHoja(REV_NUEVOS, 'Todo lo nuevo', nn, iconoHtml({nuevos:true}), state.revQue===REV_NUEVOS)+'</div>';
+    html='<div class="h-grupo">'+filaHoja(REV_NUEVOS, 'Nuevos', nn, iconoHtml({nuevos:true}), state.revQue===REV_NUEVOS)+'</div>';
     Object.keys(D.categorias).forEach(function(l){
       var filas='';
       Object.keys(D.categorias[l]).forEach(function(fa){ Object.keys(D.categorias[l][fa]).forEach(function(c){
@@ -1176,7 +1176,7 @@ document.addEventListener('click',function(e){
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') cerrarHoja(); });
 function nombreSeleccion(){
   if(RCFG.por==='proveedor') return RCFG.prov;
-  if(state.revQue===REV_NUEVOS) return 'Todo lo nuevo';
+  if(state.revQue===REV_NUEVOS) return 'Nuevos';
   var i=state.revQue.indexOf('|'); return state.revQue.slice(i+1);
 }
 // Antes de la primera tarjeta: qué se va a revisar y la configuración.
@@ -1438,7 +1438,8 @@ function alternar(id){
 $('menu').addEventListener('click',function(e){
   var b=e.target.closest('[data-ir]'); if(!b) return;
   var a=b.getAttribute('data-ir');
-  if(a==='revisar'){ state.revEmpezado=false; verRevisar('pendientes'); $('main').setAttribute('data-show', esCelular.matches?'detail':'list'); }
+  // Al entrar desde el menú, Revisar empieza siempre en "Nuevos" (decisión del usuario).
+  if(a==='revisar'){ state.revEmpezado=false; state.revQue=REV_NUEVOS; state.revActual=null; verRevisar('pendientes'); $('main').setAttribute('data-show', esCelular.matches?'detail':'list'); }
   else if(a==='comparar'){ verComparar(); $('main').setAttribute('data-show','list'); }
   else { elegirLinea(state.linea); $('main').setAttribute('data-show','list'); }
   state.animate=true; render(); window.scrollTo(0,0);
