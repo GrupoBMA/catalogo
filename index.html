@@ -169,6 +169,8 @@ a.ph-ficha{cursor:zoom-in}
 .ph-ficha img{padding:8px}
 .cmp .ph{width:100%;height:120px;margin-bottom:8px}
 .cmp .ph img{padding:4px}
+.list li.grupo{display:block;padding:14px 16px 6px;font-size:.74rem;font-weight:600;letter-spacing:.03em;color:var(--accent);background:var(--surface-2);text-transform:uppercase}
+.list li.grupo:hover{background:var(--surface-2)}
 .empty-list{padding:28px 16px;color:var(--muted);font-size:.9rem;text-align:center;display:block!important}
 .code{font-family:var(--mono);font-size:.84em;letter-spacing:.01em}
 
@@ -552,7 +554,7 @@ try{ var g=JSON.parse(localStorage.getItem('catalogo.revisar')||'null'); if(g &&
 function guardarRcfg(){ try{ localStorage.setItem('catalogo.revisar', JSON.stringify({por:RCFG.por, inco:RCFG.inco, prov:RCFG.prov, clase:state.revQue})); }catch(e){} }
 function incoKey(p){ return incotermCorto(p.incoterm) || 'Sin incoterm'; }
 function pasaInco(p){ return !!RCFG.inco[incoKey(p)]; }
-function enMazo(p){ return pasaInco(p) && (RCFG.por==='proveedor' ? p.proveedor===RCFG.prov : enQue(p, state.revQue)); }
+function enMazo(p){ return pasaInco(p) && (RCFG.por==='proveedor' ? p.proveedor===RCFG.prov : state.revQue===REV_NUEVOS ? esNovedad(p) : enQue(p, state.revQue)); }
 
 function mias(){ return DEC[YO] || (DEC[YO]={}); }
 function cambioDe(id){
@@ -565,6 +567,17 @@ function pendiente(p){
   return !d || (c && Date.parse(d.actualizado) < Date.parse(c));
 }
 function esNovedad(p){ return !!HIST[p.id]; }
+// Pestaña "Nuevos" del Catálogo: lo que llegó o cambió de precio en los últimos DIAS_NUEVO días.
+var DIAS_NUEVO=30;
+function esReciente(p){ var c=cambioDe(p.id); return !!c && (Date.now()-Date.parse(c)) < DIAS_NUEVO*864e5; }
+function nuevosBase(){
+  var ws=state.q?palabras(state.q):null;
+  return TODOS.filter(function(p){ return esReciente(p) && (!ws || coincide(p, ws)); });
+}
+function nNuevos(){ return TODOS.filter(esReciente).length; }
+function porClasePrecio(a,b){ return (ordenClase(a)-ordenClase(b)) || porPrecio(a,b); }
+// En Revisar, "Todo lo nuevo" (state.revQue = 'NUEVOS'): todos los nuevos sin calificar, una clasificación tras otra.
+var REV_NUEVOS='NUEVOS';
 // Las tarjetas salen de una sola clasificación a la vez (state.revQue = 'LINEA|Clasificación').
 function enQue(p, que){
   var i=que.indexOf('|'); return p.linea===que.slice(0,i) && p.categoria===que.slice(i+1);
@@ -603,7 +616,7 @@ function ordenClase(p){
 function porClaseNuevoPrecio(a,b){ return (ordenClase(a)-ordenClase(b)) || porNuevoPrecio(a,b); }
 function porNuevoPrecio(a,b){ return (esNovedad(b)-esNovedad(a)) || porPrecio(a,b); }
 function mazo(){
-  var ps=D.productos.filter(function(p){ return enMazo(p) && pendiente(p); }).sort(RCFG.por==='proveedor' ? porClaseNuevoPrecio : porNuevoPrecio);
+  var ps=D.productos.filter(function(p){ return enMazo(p) && pendiente(p); }).sort(RCFG.por==='proveedor' || state.revQue===REV_NUEVOS ? porClaseNuevoPrecio : porNuevoPrecio);
   if(state.revActual){
     var i=ps.map(function(p){ return p.id; }).indexOf(state.revActual);
     if(i>0) ps.unshift(ps.splice(i,1)[0]);
@@ -729,7 +742,7 @@ function pasaFiltros(p){
   return true;
 }
 // Lista con productos de varios tipos (búsqueda o favoritos): se ordena por línea, tipo y precio.
-function mixta(){ return !!(state.q || state.fav || state.rev || state.pag); }
+function mixta(){ return !!(state.q || state.fav || state.nuev || state.rev || state.pag); }
 function porLineaTipo(a,b){
   var lineas=Object.keys(D.categorias);
   return (lineas.indexOf(a.linea)-lineas.indexOf(b.linea)) || a.categoria.localeCompare(b.categoria,'es') || porPrecio(a,b);
@@ -752,6 +765,7 @@ function visibles(){
   if(state.pag) return paginasBase().filter(pasaFiltros).sort(porLineaTipo);
   if(state.rev) return state.revSub==='pendientes' ? [] : revisadosBase().filter(pasaFiltros).sort(porLineaTipo);
   if(state.fav) return favoritosBase().filter(pasaFiltros).sort(porLineaTipo);
+  if(state.nuev) return nuevosBase().filter(pasaFiltros).sort(porClasePrecio);
   if(state.q){
     var ws=palabras(state.q);
     return TODOS.filter(function(p){ return coincide(p, ws); }).sort(porLineaTipo);
@@ -776,7 +790,8 @@ function renderLineas(){
     var n=TODOS.filter(function(p){ return p.linea===l; }).length;
     return '<button role="tab" data-linea="'+l+'" aria-selected="'+(!mixta() && state.linea===l)+'">'+l+' <span class="n">'+n+'</span></button>';
   }).join('')+
-  '<button role="tab" data-favs aria-selected="'+state.fav+'"><span class="star-i">★</span> Favoritos <span class="n">'+nFav()+'</span></button>';
+  '<button role="tab" data-favs aria-selected="'+state.fav+'"><span class="star-i">★</span> Favoritos <span class="n">'+nFav()+'</span></button>'+
+  '<button role="tab" data-nuevos aria-selected="'+!!state.nuev+'"><span class="star-i">✦</span> Nuevos <span class="n">'+nNuevos()+'</span></button>';
 }
 function renderCats(){
   if(state.rev){
@@ -786,7 +801,7 @@ function renderCats(){
     }).join('')+'</div>';
     return;
   }
-  if(state.fav || state.pag){ $('cats').innerHTML=''; return; }
+  if(state.fav || state.nuev || state.pag){ $('cats').innerHTML=''; return; }
   // Una fila de pestañas con las familias y, debajo, solo los tipos de la familia elegida.
   var fs=familias(), actual=fs.filter(function(f){ return !!f.propio===!!state.propio && f.tipos.some(function(t){ return t.cat===state.cat; }); })[0] || fs[0];
   if(!actual){ $('cats').innerHTML=''; return; }
@@ -883,6 +898,14 @@ function armarFiltros(){
       (state.q?'<button class="clear" data-clearq>Borrar búsqueda</button>':'');
     return;
   }
+  if(state.nuev){
+    var nb=nuevosBase(), nn=visibles().length;
+    $('filters').innerHTML=selectFiltro('categoria','Tipo',nb)+selectFiltro('proveedor','Proveedor',nb)+
+      (Object.keys(state.filtros).length?'<button class="clear" data-clear>Quitar filtros</button>':'')+
+      '<span class="res">'+(nn===1?'1 nuevo':nn.toLocaleString('es-MX')+' nuevos')+(state.q?' con “'+esc(state.q)+'”':'')+'</span>'+
+      (state.q?'<button class="clear" data-clearq>Borrar búsqueda</button>':'');
+    return;
+  }
   if(state.q){
     var n=visibles().length;
     $('filters').innerHTML='<span class="res">'+(n===1?'1 resultado':n.toLocaleString('es-MX')+' resultados')+' en todo el catálogo</span>'+
@@ -896,8 +919,9 @@ function armarFiltros(){
   $('filters').innerHTML=html;
 }
 function renderList(){
-  var ps=visibles(), html='';
+  var ps=visibles(), html='', grupo='';
   ps.forEach(function(p){
+    if(state.nuev && grupo!==p.linea+'|'+p.categoria){ grupo=p.linea+'|'+p.categoria; html+='<li class="grupo">'+esc(p.linea)+' · '+esc(p.categoria)+'</li>'; }
     var cmp=state.comp.indexOf(p.id)>=0, rd=state.rev && decDe(state.revDe, p.id);
     var extraRev=rd ? ((rd.comentario?'<span class="item-com">“'+esc(rd.comentario)+'”</span>':'')+
       (state.revDe===YO && pendiente(p)?'<span class="badge b-precio">Cambió después de calificarlo</span>':'')) : '';
@@ -906,13 +930,14 @@ function renderList(){
         '<span class="item-name">'+esc(p.nombre)+'</span>'+
         '<span class="item-side"><b>'+esc(dinero(p))+'</b>'+esc(p.incoterm||'')+
           (fechaPrecio(p)?'<small class="fp">al '+esc(fechaPrecio(p))+'</small>':'')+'</span>'+
-        '<span class="item-sub">'+(mixta()?'<span class="item-cat">'+esc(p.linea)+' · '+(esPagina(p)?'Propios · ':'')+esc(p.categoria)+'</span>':'')+esc(p.proveedor)+(resumen(p)?' · '+esc(resumen(p)):'')+extraRev+'</span>'+
+        '<span class="item-sub">'+(mixta() && !state.nuev?'<span class="item-cat">'+esc(p.linea)+' · '+(esPagina(p)?'Propios · ':'')+esc(p.categoria)+'</span>':'')+esc(p.proveedor)+(resumen(p)?' · '+esc(resumen(p)):'')+extraRev+'</span>'+
       '</button>'+
       '<button class="star" data-fav-id="'+esc(p.id)+'" aria-pressed="'+!!FAV[p.id]+'" aria-label="'+(FAV[p.id]?'Quitar de favoritos':'Agregar a favoritos')+'" title="'+(FAV[p.id]?'Quitar de favoritos':'Agregar a favoritos')+'">'+(FAV[p.id]?'★':'☆')+'</button>'+
       '<button class="pick" data-pick="'+esc(p.id)+'" aria-pressed="'+cmp+'" aria-label="Comparar '+esc(p.nombre)+'" title="Comparar"><i></i></button>'+
     '</li>';
   });
   if(!ps.length && state.rev && !revisadosBase().length && !state.q) html='<li class="empty-list">Todavía no hay productos en “'+NOMBRE_DEC[state.revSub]+'”'+(state.revDe!==YO?' de '+esc(nombreDe(state.revDe)):'')+'.</li>';
+  else if(!ps.length && state.nuev && !nNuevos()) html='<li class="empty-list">No llegó nada nuevo en los últimos '+DIAS_NUEVO+' días.</li>';
   else if(!ps.length && state.fav && !nFav()) html='<li class="empty-list">Todavía no hay favoritos. Usa la estrella ☆ de cualquier producto.</li>';
   else if(!ps.length) html='<li class="empty-list">Ningún producto coincide'+(state.q?' con “'+esc(state.q)+'” en todo el catálogo':' con estos filtros')+'.</li>';
   $('list').innerHTML=html;
@@ -1093,9 +1118,11 @@ function iniciales(t){
 }
 function selActual(){
   if(RCFG.por==='proveedor') return {prov:RCFG.prov};
+  if(state.revQue===REV_NUEVOS) return {nuevos:true};
   var i=state.revQue.indexOf('|'); return {linea:state.revQue.slice(0,i), cat:state.revQue.slice(i+1)};
 }
 function iconoHtml(o){
+  if(o.nuevos) return '<span class="ico ini">✦</span>';
   if(o.prov!==undefined) return '<span class="ico ini">'+esc(iniciales(o.prov)||'?')+'</span>';
   return '<span class="ico">'+svgIcono(iconoClase(o.linea, o.cat))+'</span>';
 }
@@ -1125,7 +1152,8 @@ function abrirHoja(tipo){
       return filaHoja(v, v, pp[v]||0, iconoHtml({prov:v}), v===RCFG.prov);
     }).join('')+'</div>';
   } else {
-    var pc=pendientesPorClase();
+    var pc=pendientesPorClase(), nn=D.productos.filter(function(p){ return pasaInco(p) && esNovedad(p) && pendiente(p); }).length;
+    html='<div class="h-grupo">'+filaHoja(REV_NUEVOS, 'Todo lo nuevo', nn, iconoHtml({nuevos:true}), state.revQue===REV_NUEVOS)+'</div>';
     Object.keys(D.categorias).forEach(function(l){
       var filas='';
       Object.keys(D.categorias[l]).forEach(function(fa){ Object.keys(D.categorias[l][fa]).forEach(function(c){
@@ -1169,6 +1197,7 @@ document.addEventListener('click',function(e){
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') cerrarHoja(); });
 function nombreSeleccion(){
   if(RCFG.por==='proveedor') return RCFG.prov;
+  if(state.revQue===REV_NUEVOS) return 'Todo lo nuevo';
   var i=state.revQue.indexOf('|'); return state.revQue.slice(i+1);
 }
 // Antes de la primera tarjeta: qué se va a revisar y la configuración.
@@ -1199,7 +1228,7 @@ function vistaMazo(){
   if(!state.revEmpezado) return vistaInicioRevisar();
   var ps=mazo(), p=ps[0];
   var top='<div class="mz-top"><button class="mz-salir mz-conf" data-mz-config>‹ Configurar</button>'+
-    '<b class="mz-titulo">'+esc(nombreSeleccion())+'</b>'+
+    '<b class="mz-titulo">'+esc(state.revQue===REV_NUEVOS && RCFG.por!=='proveedor' && p ? 'Nuevos · '+p.categoria : nombreSeleccion())+'</b>'+
     '<span class="mz-n">'+(ps.length===1?'1 por revisar':ps.length+' por revisar')+'</span></div>';
   var area;
   if(p) area=tarjeta(p);
@@ -1277,7 +1306,7 @@ function render(){
 
 function borrarBusqueda(){ state.q=''; $('q').value=''; }
 function elegirCategoria(cat, propio){
-  borrarBusqueda(); state.fav=false; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='catalogo'; state.cat=cat; state.propio=!!propio; state.filtros={};
+  borrarBusqueda(); state.fav=false; state.nuev=false; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='catalogo'; state.cat=cat; state.propio=!!propio; state.filtros={};
   var ps=visibles(); state.sel=ps.length?ps[0].id:null;
   if(state.vista!=='comparar') state.vista='ficha';
 }
@@ -1288,13 +1317,13 @@ function elegirLinea(l){
 function mostrar(vista){ state.vista=vista; state.animate=true; $('main').setAttribute('data-show','detail'); if(esCelular.matches) window.scrollTo(0,0); }
 function nFav(){ return TODOS.filter(function(p){ return FAV[p.id]; }).length; }
 function verFavoritos(){
-  borrarBusqueda(); state.fav=true; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='catalogo'; state.filtros={};
+  borrarBusqueda(); state.fav=true; state.nuev=false; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='catalogo'; state.filtros={};
   var ps=visibles(); state.sel=ps.length?ps[0].id:null;
   if(state.vista!=='comparar') state.vista='ficha';
 }
 // Comparar: una clasificación con TODOS sus modelos (proveedores y páginas web) para marcar y poner lado a lado.
 function verComparar(){
-  borrarBusqueda(); state.cmpModo=true; state.fav=false; state.rev=false; state.pag=false; state.modo='comparar'; state.filtros={};
+  borrarBusqueda(); state.cmpModo=true; state.fav=false; state.nuev=false; state.rev=false; state.pag=false; state.modo='comparar'; state.filtros={};
   if(!state.cmpQue || !TODOS.some(function(p){ return enQue(p, state.cmpQue); })){
     var p0=producto(state.comp[0]) || TODOS.filter(function(p){ return p.linea===state.linea && p.categoria===state.cat; })[0] || TODOS[0];
     state.cmpQue = p0 ? p0.linea+'|'+p0.categoria : '';
@@ -1302,7 +1331,7 @@ function verComparar(){
   var ps=visibles(); state.sel=ps.length?ps[0].id:null; state.vista='ficha';
 }
 function irMenu(){
-  borrarBusqueda(); state.modo='menu'; state.rev=false; state.fav=false; state.pag=false; state.cmpModo=false; state.filtros={};
+  borrarBusqueda(); state.modo='menu'; state.rev=false; state.fav=false; state.nuev=false; state.pag=false; state.cmpModo=false; state.filtros={};
   $('main').setAttribute('data-show','list');
 }
 function renderMenu(){
@@ -1312,19 +1341,24 @@ function renderMenu(){
     '<button class="opc" data-ir="catalogo"><i>▦</i><b>Catálogo</b><span>Todos los productos por línea y tipo, con filtros, favoritos y los propios (páginas web).</span><em>'+D.productos.length.toLocaleString('es-MX')+' productos</em></button>'+
     '<button class="opc" data-ir="comparar"><i>⇆</i><b>Comparar</b><span>Escoge una clasificación y pon modelos lado a lado, también contra los propios.</span>'+(state.comp.length?'<em>'+state.comp.length+' marcados</em>':'')+'</button>';
 }
+function verNuevos(){
+  borrarBusqueda(); state.nuev=true; state.fav=false; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='catalogo'; state.filtros={};
+  var ps=visibles(); state.sel=ps.length?ps[0].id:null;
+  if(state.vista!=='comparar') state.vista='ficha';
+}
 function verPaginas(){
-  borrarBusqueda(); state.pag=true; state.fav=false; state.rev=false; state.cmpModo=false; state.modo='catalogo'; state.filtros={};
+  borrarBusqueda(); state.pag=true; state.fav=false; state.nuev=false; state.rev=false; state.cmpModo=false; state.modo='catalogo'; state.filtros={};
   var ps=visibles(); state.sel=ps.length?ps[0].id:null;
   if(state.vista!=='comparar') state.vista='ficha';
 }
 function verRevisar(sub){
-  borrarBusqueda(); state.rev=true; state.fav=false; state.pag=false; state.cmpModo=false; state.modo='revisar'; state.filtros={}; state.revSub=sub;
+  borrarBusqueda(); state.rev=true; state.fav=false; state.nuev=false; state.pag=false; state.cmpModo=false; state.modo='revisar'; state.filtros={}; state.revSub=sub;
   if(!state.revDe || !USUARIOS.some(function(u){ return u.id===state.revDe; })){
     // Si yo no he calificado nada pero otra cuenta sí, se muestran las de esa cuenta.
     var conDec=USUARIOS.filter(function(u){ return Object.keys(DEC[u.id]||{}).length; });
     state.revDe = Object.keys(mias()).length || !conDec.length ? YO : conDec[0].id;
   }
-  if(sub==='pendientes' && (!state.revQue || !D.productos.some(function(p){ return enQue(p, state.revQue); }))) state.revQue=queInicial();
+  if(sub==='pendientes' && state.revQue!==REV_NUEVOS && (!state.revQue || !D.productos.some(function(p){ return enQue(p, state.revQue); }))) state.revQue=queInicial();
   if(sub==='pendientes' && (!RCFG.prov || !D.productos.some(function(p){ return p.proveedor===RCFG.prov; }))) RCFG.prov=provInicial();
   if(sub!=='pendientes'){ var ps=visibles(); state.sel=ps.length?ps[0].id:null; if(state.vista!=='comparar') state.vista='ficha'; }
 }
@@ -1439,6 +1473,7 @@ $('ir-menu').addEventListener('click',function(){ irMenu(); render(); window.scr
 $('lineas').addEventListener('click',function(e){
   if(e.target.closest('[data-pag]')){ verPaginas(); state.animate=true; $('main').setAttribute('data-show','list'); render(); return; }
   if(e.target.closest('[data-rev]')){ verRevisar('pendientes'); state.animate=true; $('main').setAttribute('data-show', esCelular.matches?'detail':'list'); render(); return; }
+  if(e.target.closest('[data-nuevos]')){ verNuevos(); state.animate=true; $('main').setAttribute('data-show','list'); render(); return; }
   if(e.target.closest('[data-favs]')){ verFavoritos(); state.animate=true; $('main').setAttribute('data-show','list'); render(); return; }
   var b=e.target.closest('[data-linea]'); if(!b) return; elegirLinea(b.getAttribute('data-linea')); state.animate=true; $('main').setAttribute('data-show','list'); render(); });
 $('cats').addEventListener('click',function(e){
@@ -1461,7 +1496,7 @@ $('filters').addEventListener('change',function(e){
   renderFiltros(); renderList();
 });
 $('filters').addEventListener('click',function(e){
-  if(e.target.closest('[data-clearq]')){ if(state.fav || state.pag || state.rev || state.cmpModo){ borrarBusqueda(); renderFiltros(); renderList(); } else { elegirCategoria(state.cat, state.propio); render(); } return; }
+  if(e.target.closest('[data-clearq]')){ if(state.fav || state.nuev || state.pag || state.rev || state.cmpModo){ borrarBusqueda(); renderFiltros(); renderList(); } else { elegirCategoria(state.cat, state.propio); render(); } return; }
   if(e.target.closest('[data-ftoggle]')){ state.filtrosAbiertos=!state.filtrosAbiertos; renderFiltros(); return; }
   if(e.target.closest('[data-clear]')){ state.filtros={}; renderFiltros(); renderList(); } });
 $('list').addEventListener('click',function(e){
@@ -1514,7 +1549,7 @@ $('q').addEventListener('input',function(){
   state.q=this.value.trim();
   // En la tarjeta no se busca: escribir manda a la búsqueda general.
   if((state.rev && state.revSub==='pendientes') || state.modo==='menu'){ state.rev=false; state.modo='catalogo'; state.vista='ficha'; $('main').setAttribute('data-show','list'); }
-  if(!state.fav && !state.rev && !state.pag && !state.cmpModo) state.filtros={};
+  if(!state.fav && !state.nuev && !state.rev && !state.pag && !state.cmpModo) state.filtros={};
   $('app').setAttribute('data-modo', state.modo); $('ir-menu').hidden = state.modo==='menu';
   renderLineas(); renderCats(); renderFiltros(); renderList(); renderDetail(); renderBar();
 });
@@ -1530,7 +1565,7 @@ document.addEventListener('keydown',function(e){
 // ---- Botón "atrás" (celular o navegador): regresa a la pantalla anterior de la app ----
 // Cada cambio de pantalla deja una entrada en el historial con una copia del estado; "atrás" la restaura.
 // Dentro de la misma pantalla (filtros, otro producto en la computadora) solo se actualiza la entrada.
-var NAV_CAMPOS=['modo','linea','cat','propio','fav','rev','pag','cmpModo','revSub','revEmpezado','revQue','revDe',
+var NAV_CAMPOS=['modo','linea','cat','propio','fav','nuev','rev','pag','cmpModo','revSub','revEmpezado','revQue','revDe',
                 'cmpQue','q','sel','vista','filtros','filtrosAbiertos'];
 var navHuella=null, navRestaurando=false, navIgnorar=false;
 function navEstado(){
@@ -1540,7 +1575,7 @@ function navEstado(){
 }
 function navPantalla(s){  // lo que cuenta como "otra pantalla" (en computadora la lista y la ficha se ven juntas)
   var cel=esCelular.matches;
-  return JSON.stringify([s.modo, s.linea, s.cat, s.propio, s.fav, s.rev, s.pag, s.cmpModo, s.revSub, s.revEmpezado,
+  return JSON.stringify([s.modo, s.linea, s.cat, s.propio, s.fav, s.nuev, s.rev, s.pag, s.cmpModo, s.revSub, s.revEmpezado,
     cel ? s.show : null, s.vista, !!s.q, (cel && s.show==='detail') ? s.sel : null]);
 }
 function anotarNav(){
@@ -1605,7 +1640,7 @@ $('login-form').addEventListener('submit',function(e){
   });
 });
 $('salir').addEventListener('click',function(){
-  sb.auth.signOut().then(function(){ D={categorias:{},etiquetas:{},productos:[]}; FAV={}; DEC={}; HIST={}; DESHACER=[]; YO=null; TODOS=[]; PAGINAS=[]; state.fav=false; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='menu'; state.revDe=null; arrancado=false; state.comp=[]; verLogin(); });
+  sb.auth.signOut().then(function(){ D={categorias:{},etiquetas:{},productos:[]}; FAV={}; DEC={}; HIST={}; DESHACER=[]; YO=null; TODOS=[]; PAGINAS=[]; state.fav=false; state.nuev=false; state.rev=false; state.pag=false; state.cmpModo=false; state.modo='menu'; state.revDe=null; arrancado=false; state.comp=[]; verLogin(); });
 });
 
 // Solo en la computadora (localhost): si existe datos/productos.json (lo genera build_catalogo.py),
