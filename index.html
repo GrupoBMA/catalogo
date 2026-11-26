@@ -497,7 +497,7 @@ var SUPABASE_URL = 'https://jlfendrdwptwmttrahre.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_RNnR7jV42dGEGLFWdRVfvQ_cP1xSwuO';
 // El usuario se escribe sin correo: por dentro se convierte en usuario@catalogo.bma.
 var DOMINIO = '@catalogo.bma';
-var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true, autoRefreshToken:true}});
+var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'catalogo-sesion'}});
 
 // Nombres para mostrar de cada característica (los datos reales traen los suyos).
 var ETIQUETAS = {
