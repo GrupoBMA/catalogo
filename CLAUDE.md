@@ -75,3 +75,7 @@ El repo es **público** (GitHub Pages en el plan gratis). Los catálogos de prov
 - **GVF:** al hacer esto se encontró que las 26 tablas de GVF dejaban entrar a cualquier cuenta con sesión. Ahora sus reglas (`solo_gvf_*`) solo dejan pasar a las cuentas de `acceso.gvf_usuarios` (hoy, la de GVF). Una cuenta nueva de GVF hay que agregarla ahí.
 - La llave del código es la pública (publishable); sin sesión no da acceso a nada.
 - **La sesión se guarda con su propio nombre** (`storageKey: 'catalogo-sesion'` en `createClient`, 26-nov-2026): Logística y Administración están en el mismo dominio (grupobma.github.io) y el mismo proyecto de Supabase, y con el nombre de siempre compartían sesión: entrar en una pestaña pisaba la de la otra ("esa cuenta no tiene acceso"). Al publicarlo hubo que volver a entrar una vez.
+
+## Inicio de sesión: ojo
+
+**Ojo para ver la contraseña** (27-nov-2026, pedido del usuario, igual en las 4 apps): en el inicio de sesión, un botón con un ojo a la derecha del campo muestra u oculta lo escrito; al dar Entrar se vuelve a tapar. Es un bloque `<style>` + `<script>` al final de `index.html` ("Ojo para ver la contraseña") que envuelve cualquier `input[type=password]` en `.ojo-caja` y le pone `.ojo-btn`; si se cambia, cambiarlo igual en las 4 apps.
